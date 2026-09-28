@@ -215,7 +215,19 @@ export const ProfilePage = () => {
       {/* Identity Banner */}
       <div className="profile-banner-card">
         <div className="profile-avatar-wrapper">
-          <div className="profile-avatar-circle">
+          <div
+            className="profile-avatar-circle"
+            onClick={() => fileInputRef.current?.click()}
+            title="Click to change profile photo"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+          >
             {avatarPreview ? (
               <img
                 src={avatarPreview}
@@ -225,14 +237,9 @@ export const ProfilePage = () => {
             ) : (
               <span className="profile-avatar-initials">{initials}</span>
             )}
-            <button
-              type="button"
-              className="profile-avatar-upload-btn"
-              onClick={() => fileInputRef.current?.click()}
-              title="Click to change profile photo"
-            >
-              Change
-            </button>
+            <div className="profile-avatar-hover-overlay">
+              <span className="profile-avatar-hover-text">Change Photo</span>
+            </div>
           </div>
           <input
             type="file"
@@ -242,6 +249,7 @@ export const ProfilePage = () => {
             style={{ display: 'none' }}
           />
         </div>
+
 
         <div className="profile-banner-info">
           <div className="profile-banner-header">

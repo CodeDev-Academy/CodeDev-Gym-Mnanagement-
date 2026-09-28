@@ -3376,20 +3376,34 @@ body {
   width: 104px;
   height: 104px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  border: 3px solid rgba(255, 87, 34, 0.6);
-  box-shadow: 0 4px 20px rgba(255, 87, 34, 0.25);
+  background: #111827;
+  border: 3px solid #ff5722;
+  outline: 2px solid rgba(255, 255, 255, 0.12);
+  outline-offset: 2px;
+  clip-path: circle(50% at 50% 50%);
+  -webkit-clip-path: circle(50% at 50% 50%);
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
+  cursor: pointer;
+  box-shadow: none;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.profile-avatar-circle:hover {
+  transform: scale(1.02);
+  border-color: #ff8a65;
 }
 
 .profile-avatar-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .profile-avatar-initials {
@@ -3397,31 +3411,39 @@ body {
   font-weight: 800;
   color: #f8fafc;
   letter-spacing: 1px;
+  user-select: none;
 }
 
-.profile-avatar-upload-btn {
+.profile-avatar-hover-overlay {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(15, 23, 42, 0.85);
-  color: #f8fafc;
-  border: none;
-  font-size: 0.68rem;
+  inset: 0;
+  background: rgba(11, 15, 25, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.profile-avatar-circle:hover .profile-avatar-hover-overlay {
+  opacity: 1;
+}
+
+.profile-avatar-hover-text {
+  color: #ffffff;
+  font-size: 0.7rem;
   font-weight: 700;
-  padding: 0.3rem 0;
-  text-align: center;
-  cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(4px);
+  text-align: center;
+  padding: 0.35rem 0.65rem;
+  background: rgba(255, 87, 34, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
-.profile-avatar-upload-btn:hover {
-  background: #ff5722;
-  color: white;
-}
 
 .profile-banner-info {
   flex: 1;
