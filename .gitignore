@@ -11,6 +11,8 @@ gym_backend/**/__pycache__/
 gym_backend/db.sqlite3
 gym_backend/media/
 *.sqlite3
+*.bak
+gym_backend/backups/
 
 # Node.js & Vite
 node_modules/
