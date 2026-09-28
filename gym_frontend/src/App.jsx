@@ -9,6 +9,7 @@ import { PlansPage } from './memberships/PlansPage';
 import { MembersPage } from './members/MembersPage';
 import { PaymentsPage } from './payments/PaymentsPage';
 import { CheckInPage } from './checkin/CheckInPage';
+import { ProfilePage } from './profile/ProfilePage';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
             <Route path="/members" element={<MembersPage />} />
             <Route path="/plans" element={<PlansPage />} />
             <Route path="/payments" element={<PaymentsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

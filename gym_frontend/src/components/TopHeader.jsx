@@ -76,12 +76,33 @@ export const TopHeader = ({ onSearch }) => {
         </div>
 
         {/* User Profile Capsule */}
-        <div className="top-user-capsule">
+        <div
+          className="top-user-capsule"
+          onClick={() => navigate('/profile')}
+          title="Manage Account & Profile"
+          role="button"
+          tabIndex={0}
+          style={{ cursor: 'pointer' }}
+        >
           <div className="top-user-avatar">
-            {user?.username?.charAt(0).toUpperCase() || <UserIcon size={16} />}
+            {user?.avatar ? (
+              <img
+                src={user.avatar}
+                alt="Avatar"
+                className="top-user-avatar-img"
+              />
+            ) : (
+              user?.first_name
+                ? user.first_name.charAt(0).toUpperCase()
+                : user?.username?.charAt(0).toUpperCase() || <UserIcon size={16} />
+            )}
           </div>
           <div className="top-user-meta">
-            <span className="top-user-name">{user?.username}</span>
+            <span className="top-user-name">
+              {user?.first_name
+                ? `${user.first_name} ${user.last_name || ''}`.trim()
+                : user?.username}
+            </span>
             <span className="top-user-role">
               <ShieldIcon size={11} color="#60a5fa" />
               {user?.role === 'OWNER' ? 'Owner' : 'Staff'}

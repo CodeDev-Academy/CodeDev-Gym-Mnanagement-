@@ -8,8 +8,10 @@ import {
   UsersIcon,
   LayersIcon,
   CreditCardIcon,
+  UserIcon,
   LogOutIcon,
 } from './Icons';
+
 
 export const Sidebar = () => {
   const { logout, user } = useAuth();
@@ -83,7 +85,19 @@ export const Sidebar = () => {
           <CreditCardIcon size={22} />
           <span className="sidebar-tooltip">Payments</span>
         </NavLink>
+
+        <NavLink
+          to="/profile"
+          className={({ isActive }) =>
+            `sidebar-nav-btn ${isActive ? 'active' : ''}`
+          }
+          title="Owner Profile"
+        >
+          <UserIcon size={22} />
+          <span className="sidebar-tooltip">Profile</span>
+        </NavLink>
       </nav>
+
 
       {/* Footer Bottom / Logout */}
       <div className="sidebar-bottom">
