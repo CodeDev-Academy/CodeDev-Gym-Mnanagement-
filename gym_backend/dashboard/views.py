@@ -9,6 +9,8 @@ from attendance.models import CheckIn
 from members.models import Member
 from memberships.models import Subscription
 from payments.models import Payment
+from accounts.permissions import IsOwnerUser
+
 
 
 class DashboardStatsView(APIView):
@@ -105,10 +107,13 @@ class DashboardStatsView(APIView):
         ]
 
         # 6. Recent Payments (last 6)
-        recent_payments_qs = (
-            Payment.objects.select_related('subscription__member', 'subscription__plan')
-            .order_by('-payment_date')[:6]
-        )
+        is_owner = getattr(request.user, 'is_owner', False)
+        recent_payments_base = Payment.objects.select_related('subscription__member', 'subscription__plan')
+        if not is_owner:
+            # Receptionists only see today's shift receipts
+            recent_payments_base = recent_payments_base.filter(payment_date__date=today)
+
+        recent_payments_qs = recent_payments_base.order_by('-payment_date')[:6]
         recent_payments = []
         for p in recent_payments_qs:
             m = p.subscription.member if p.subscription else None
@@ -130,9 +135,10 @@ class DashboardStatsView(APIView):
                 'active_members': active_members_count,
                 'today_checkins': today_checkins,
                 'today_unique_checkins': today_unique_checkins,
-                'month_revenue': month_revenue,
-                'today_revenue': today_revenue,
+                'month_revenue': month_revenue if is_owner else None,
+                'today_revenue': today_revenue if is_owner else None,
                 'expiring_this_week_count': expiring_count,
+                'is_owner': is_owner,
             },
             'expiring_this_week': expiring_list,
             'recent_checkins': recent_checkins,
@@ -146,7 +152,8 @@ class DailySummaryView(APIView):
     Daily summary endpoint intended for Owner report & n8n automation (Phase 6):
     Returns revenue today, check-ins today, new members registered today, and expiring members today.
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerUser]
+
 
     def get(self, request):
         today = timezone.localdate()

@@ -1,5 +1,6 @@
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.response import Response
+from accounts.permissions import IsOwnerUser
 from .models import MembershipPlan, Subscription
 from .serializers import MembershipPlanSerializer, SubscriptionSerializer, AssignPlanSerializer
 
@@ -12,6 +13,12 @@ class MembershipPlanViewSet(viewsets.ModelViewSet):
     search_fields = ['name']
     ordering_fields = ['name', 'price', 'duration_days', 'created_at']
     ordering = ['name']
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [permissions.IsAuthenticated(), IsOwnerUser()]
+        return [permissions.IsAuthenticated()]
+
 
     def get_queryset(self):
         queryset = super().get_queryset()

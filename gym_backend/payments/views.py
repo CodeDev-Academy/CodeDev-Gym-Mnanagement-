@@ -1,7 +1,9 @@
 from django.db.models import Sum, Count
+from django.utils import timezone
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from accounts.permissions import IsOwnerUser
 from .models import Payment
 from .serializers import PaymentSerializer, RecordPaymentSerializer
 
@@ -18,13 +20,25 @@ class PaymentViewSet(viewsets.ModelViewSet):
     ordering_fields = ['payment_date', 'amount']
     ordering = ['-payment_date']
 
+    def get_permissions(self):
+        if self.action in ['destroy', 'summary']:
+            return [permissions.IsAuthenticated(), IsOwnerUser()]
+        return [permissions.IsAuthenticated()]
+
     def get_serializer_class(self):
         if self.action == 'create':
             return RecordPaymentSerializer
         return PaymentSerializer
 
+
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        # If logged in as Front-Desk Staff, restrict to today's shift payments
+        if getattr(self.request.user, 'is_front_desk', False):
+            today = timezone.localdate()
+            queryset = queryset.filter(payment_date__date=today)
+
         member_id = self.request.query_params.get('member')
         subscription_id = self.request.query_params.get('subscription')
         method_param = self.request.query_params.get('method')
@@ -35,6 +49,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(subscription_id=subscription_id)
         if method_param:
             queryset = queryset.filter(method=method_param)
+
 
         return queryset
 

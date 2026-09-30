@@ -1,4 +1,5 @@
 from rest_framework import viewsets, permissions, filters
+from accounts.permissions import IsOwnerUser
 from .models import Member
 from .serializers import MemberSerializer, MemberDetailSerializer
 
@@ -11,6 +12,12 @@ class MemberViewSet(viewsets.ModelViewSet):
     search_fields = ['full_name', 'phone_number', 'email']
     ordering_fields = ['full_name', 'date_joined', 'is_active']
     ordering = ['-date_joined']
+
+    def get_permissions(self):
+        if self.action == 'destroy':
+            return [permissions.IsAuthenticated(), IsOwnerUser()]
+        return [permissions.IsAuthenticated()]
+
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
