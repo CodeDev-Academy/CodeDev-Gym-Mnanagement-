@@ -3697,3 +3697,156 @@ body {
   cursor: not-allowed;
 }
 
+/* Staff Management in Profile */
+.profile-full-card {
+  background: #111c38;
+  border: 1px solid #1e2d52;
+  border-radius: 16px;
+  padding: 1.75rem;
+  margin-top: 1.5rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.profile-card-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.staff-table-wrapper {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.staff-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.staff-table th {
+  background: rgba(15, 23, 42, 0.8);
+  color: #94a3b8;
+  font-weight: 600;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.staff-table td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #f1f5f9;
+  vertical-align: middle;
+}
+
+.staff-table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.staff-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.staff-avatar-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.staff-user-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.staff-user-name {
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.staff-user-handle {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.staff-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.staff-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.staff-btn-reset {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.staff-btn-reset:hover {
+  background: rgba(59, 130, 246, 0.28);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.staff-btn-deactivate {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.staff-btn-deactivate:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.staff-btn-activate {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.staff-btn-activate:hover {
+  background: rgba(34, 197, 94, 0.25);
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.staff-empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: #94a3b8;
+}
+
+.staff-empty-icon {
+  margin-bottom: 0.75rem;
+  opacity: 0.5;
+}
+

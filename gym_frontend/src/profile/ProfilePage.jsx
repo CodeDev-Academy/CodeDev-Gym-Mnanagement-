@@ -1,12 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../auth/AuthContext';
-import { getProfile, updateProfile, changePassword } from '../api/auth';
+import {
+  getProfile,
+  updateProfile,
+  changePassword,
+  getStaffList,
+  createStaff,
+  resetStaffPassword,
+  toggleStaffStatus,
+} from '../api/auth';
 import {
   UserIcon,
+  UsersIcon,
   ShieldIcon,
   CheckCircleIcon,
   AlertCircleIcon,
   ClockIcon,
+  PlusIcon,
+  KeyIcon,
 } from '../components/Icons';
 
 export const ProfilePage = () => {
@@ -41,6 +52,38 @@ export const ProfilePage = () => {
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [passwordError, setPasswordError] = useState('');
+
+  // Staff management state (Owner only)
+  const [staffList, setStaffList] = useState([]);
+  const [loadingStaff, setLoadingStaff] = useState(false);
+  const [staffError, setStaffError] = useState('');
+  const [staffSuccess, setStaffSuccess] = useState('');
+
+  // Modal states
+  const [isAddStaffOpen, setIsAddStaffOpen] = useState(false);
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState(null);
+
+  // Add staff form state
+  const [newStaffForm, setNewStaffForm] = useState({
+    username: '',
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone_number: '',
+    password: '',
+  });
+  const [submittingStaff, setSubmittingStaff] = useState(false);
+  const [modalStaffError, setModalStaffError] = useState('');
+
+  // Reset staff password form state
+  const [resetPasswordForm, setResetPasswordForm] = useState({
+    new_password: '',
+    confirm_password: '',
+  });
+  const [submittingReset, setSubmittingReset] = useState(false);
+  const [modalResetError, setModalResetError] = useState('');
+  const [actionInProgressId, setActionInProgressId] = useState(null);
 
   useEffect(() => {
     fetchProfile();
@@ -186,6 +229,131 @@ export const ProfilePage = () => {
       setPasswordError(msg);
     } finally {
       setSavingPassword(false);
+    }
+  };
+
+  const fetchStaff = async () => {
+    setLoadingStaff(true);
+    setStaffError('');
+    try {
+      const data = await getStaffList();
+      setStaffList(data);
+    } catch (err) {
+      setStaffError('Failed to load staff list.');
+    } finally {
+      setLoadingStaff(false);
+    }
+  };
+
+  useEffect(() => {
+    if (profile.role === 'OWNER') {
+      fetchStaff();
+    }
+  }, [profile.role]);
+
+  const handleCreateStaff = async (e) => {
+    e.preventDefault();
+    setSubmittingStaff(true);
+    setModalStaffError('');
+
+    if (newStaffForm.password.length < 8) {
+      setModalStaffError('Password must be at least 8 characters long.');
+      setSubmittingStaff(false);
+      return;
+    }
+
+    try {
+      await createStaff(newStaffForm);
+      setStaffSuccess(`Front-desk staff @${newStaffForm.username} registered successfully.`);
+      setIsAddStaffOpen(false);
+      setNewStaffForm({
+        username: '',
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone_number: '',
+        password: '',
+      });
+      fetchStaff();
+    } catch (err) {
+      const errorData = err.response?.data;
+      let msg = 'Failed to create staff member.';
+      if (errorData) {
+        if (errorData.username) {
+          msg = Array.isArray(errorData.username) ? errorData.username[0] : errorData.username;
+        } else if (errorData.password) {
+          msg = Array.isArray(errorData.password) ? errorData.password[0] : errorData.password;
+        } else if (errorData.detail) {
+          msg = errorData.detail;
+        }
+      }
+      setModalStaffError(msg);
+    } finally {
+      setSubmittingStaff(false);
+    }
+  };
+
+  const handleResetStaffPassword = async (e) => {
+    e.preventDefault();
+    setSubmittingReset(true);
+    setModalResetError('');
+
+    if (resetPasswordForm.new_password !== resetPasswordForm.confirm_password) {
+      setModalResetError('Passwords do not match.');
+      setSubmittingReset(false);
+      return;
+    }
+
+    if (resetPasswordForm.new_password.length < 8) {
+      setModalResetError('New password must be at least 8 characters long.');
+      setSubmittingReset(false);
+      return;
+    }
+
+    try {
+      await resetStaffPassword(selectedStaff.id, {
+        new_password: resetPasswordForm.new_password,
+      });
+      setStaffSuccess(`Password for @${selectedStaff.username} updated successfully.`);
+      setIsResetPasswordOpen(false);
+      setSelectedStaff(null);
+      setResetPasswordForm({ new_password: '', confirm_password: '' });
+    } catch (err) {
+      const errorData = err.response?.data;
+      let msg = 'Failed to reset password.';
+      if (errorData) {
+        if (errorData.new_password) {
+          msg = Array.isArray(errorData.new_password) ? errorData.new_password[0] : errorData.new_password;
+        } else if (errorData.detail) {
+          msg = errorData.detail;
+        }
+      }
+      setModalResetError(msg);
+    } finally {
+      setSubmittingReset(false);
+    }
+  };
+
+  const handleToggleStaffStatus = async (staffMember) => {
+    setActionInProgressId(staffMember.id);
+    setStaffError('');
+    setStaffSuccess('');
+    try {
+      const updated = await toggleStaffStatus(staffMember.id);
+      setStaffSuccess(
+        `Account status for @${staffMember.username} updated to ${
+          updated.is_active ? 'Active' : 'Inactive'
+        }.`
+      );
+      setStaffList((prev) =>
+        prev.map((s) =>
+          s.id === staffMember.id ? { ...s, is_active: updated.is_active } : s
+        )
+      );
+    } catch (err) {
+      setStaffError(err.response?.data?.detail || 'Failed to toggle account status.');
+    } finally {
+      setActionInProgressId(null);
     }
   };
 
@@ -489,6 +657,366 @@ export const ProfilePage = () => {
           </form>
         </div>
       </div>
+
+      {/* Card 3: Front-Desk Staff & Receptionists (Owner Role Only) */}
+      {profile.role === 'OWNER' && (
+        <div className="profile-full-card">
+          <div className="profile-card-header-flex">
+            <div>
+              <h2 className="profile-card-title">Front-Desk Staff & Receptionists</h2>
+              <p className="profile-card-subtitle">
+                Manage receptionist accounts, grant or revoke access, and reset passwords.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="profile-btn-primary"
+              onClick={() => {
+                setModalStaffError('');
+                setIsAddStaffOpen(true);
+              }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <PlusIcon size={16} />
+              Add Receptionist
+            </button>
+          </div>
+
+          {staffSuccess && (
+            <div className="profile-alert profile-alert-success" style={{ marginBottom: '1rem' }}>
+              <CheckCircleIcon size={16} />
+              <span>{staffSuccess}</span>
+            </div>
+          )}
+
+          {staffError && (
+            <div className="profile-alert profile-alert-error" style={{ marginBottom: '1rem' }}>
+              <AlertCircleIcon size={16} />
+              <span>{staffError}</span>
+            </div>
+          )}
+
+          {loadingStaff ? (
+            <div className="profile-loading" style={{ padding: '2rem' }}>
+              Loading staff accounts...
+            </div>
+          ) : staffList.length === 0 ? (
+            <div className="staff-empty-state">
+              <UsersIcon size={40} className="staff-empty-icon" color="#64748b" />
+              <h3 style={{ color: '#cbd5e1', marginBottom: '0.5rem' }}>No Receptionists Registered</h3>
+              <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
+                Add front-desk staff accounts so receptionists can check in gym members and record walk-in payments.
+              </p>
+              <button
+                type="button"
+                className="profile-btn-primary"
+                onClick={() => {
+                  setModalStaffError('');
+                  setIsAddStaffOpen(true);
+                }}
+              >
+                Register First Receptionist
+              </button>
+            </div>
+          ) : (
+            <div className="staff-table-wrapper">
+              <table className="staff-table">
+                <thead>
+                  <tr>
+                    <th>Staff Member</th>
+                    <th>Contact</th>
+                    <th>Status</th>
+                    <th>Joined Date</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {staffList.map((staff) => {
+                    const staffInitials =
+                      (staff.first_name ? staff.first_name[0] : '') +
+                      (staff.last_name ? staff.last_name[0] : '') ||
+                      staff.username[0].toUpperCase();
+
+                    return (
+                      <tr key={staff.id}>
+                        <td>
+                          <div className="staff-user-cell">
+                            <div className="staff-avatar-badge">{staffInitials}</div>
+                            <div className="staff-user-meta">
+                              <span className="staff-user-name">
+                                {staff.first_name || staff.last_name
+                                  ? `${staff.first_name} ${staff.last_name}`.trim()
+                                  : staff.username}
+                              </span>
+                              <span className="staff-user-handle">@{staff.username}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div>{staff.email || '—'}</div>
+                          <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                            {staff.phone_number || 'No phone'}
+                          </div>
+                        </td>
+                        <td>
+                          <span
+                            className={`status-badge ${
+                              staff.is_active ? 'status-active' : 'status-inactive'
+                            }`}
+                          >
+                            {staff.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td>
+                          {staff.date_joined
+                            ? new Date(staff.date_joined).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                              })
+                            : '—'}
+                        </td>
+                        <td>
+                          <div className="staff-actions">
+                            <button
+                              type="button"
+                              className="staff-action-btn staff-btn-reset"
+                              onClick={() => {
+                                setSelectedStaff(staff);
+                                setModalResetError('');
+                                setResetPasswordForm({ new_password: '', confirm_password: '' });
+                                setIsResetPasswordOpen(true);
+                              }}
+                              title="Reset Staff Password"
+                            >
+                              <KeyIcon size={14} />
+                              Reset Password
+                            </button>
+                            <button
+                              type="button"
+                              className={`staff-action-btn ${
+                                staff.is_active ? 'staff-btn-deactivate' : 'staff-btn-activate'
+                              }`}
+                              onClick={() => handleToggleStaffStatus(staff)}
+                              disabled={actionInProgressId === staff.id}
+                              title={staff.is_active ? 'Deactivate Account' : 'Activate Account'}
+                            >
+                              {actionInProgressId === staff.id
+                                ? 'Updating...'
+                                : staff.is_active
+                                ? 'Deactivate'
+                                : 'Activate'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Add Staff Modal */}
+      {isAddStaffOpen && (
+        <div className="modal-overlay" onClick={() => setIsAddStaffOpen(false)}>
+          <div className="modal-card modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Register Front-Desk Receptionist</h3>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={() => setIsAddStaffOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {modalStaffError && (
+              <div className="profile-alert profile-alert-error" style={{ marginBottom: '1rem' }}>
+                <AlertCircleIcon size={16} />
+                <span>{modalStaffError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateStaff} className="modal-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>First Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Joy"
+                    value={newStaffForm.first_name}
+                    onChange={(e) =>
+                      setNewStaffForm({ ...newStaffForm, first_name: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Last Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Obi"
+                    value={newStaffForm.last_name}
+                    onChange={(e) =>
+                      setNewStaffForm({ ...newStaffForm, last_name: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Username *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. joy_desk"
+                    value={newStaffForm.username}
+                    onChange={(e) =>
+                      setNewStaffForm({ ...newStaffForm, username: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Initial Password *</label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="At least 8 characters"
+                    value={newStaffForm.password}
+                    onChange={(e) =>
+                      setNewStaffForm({ ...newStaffForm, password: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="e.g. joy@gym.com"
+                    value={newStaffForm.email}
+                    onChange={(e) =>
+                      setNewStaffForm({ ...newStaffForm, email: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Phone Number</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. +234 801 234 5678"
+                    value={newStaffForm.phone_number}
+                    onChange={(e) =>
+                      setNewStaffForm({ ...newStaffForm, phone_number: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  className="profile-btn-secondary"
+                  onClick={() => setIsAddStaffOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingStaff}
+                  className="profile-btn-primary"
+                >
+                  {submittingStaff ? 'Registering...' : 'Create Account'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Staff Password Modal */}
+      {isResetPasswordOpen && selectedStaff && (
+        <div className="modal-overlay" onClick={() => setIsResetPasswordOpen(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Reset Password: @{selectedStaff.username}</h3>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={() => setIsResetPasswordOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {modalResetError && (
+              <div className="profile-alert profile-alert-error" style={{ marginBottom: '1rem' }}>
+                <AlertCircleIcon size={16} />
+                <span>{modalResetError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleResetStaffPassword} className="modal-form">
+              <div className="form-group">
+                <label>New Password *</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="At least 8 characters"
+                  value={resetPasswordForm.new_password}
+                  onChange={(e) =>
+                    setResetPasswordForm({
+                      ...resetPasswordForm,
+                      new_password: e.target.value,
+                    })
+                  }
+                  autoFocus
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Confirm New Password *</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Re-enter new password"
+                  value={resetPasswordForm.confirm_password}
+                  onChange={(e) =>
+                    setResetPasswordForm({
+                      ...resetPasswordForm,
+                      confirm_password: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  className="profile-btn-secondary"
+                  onClick={() => setIsResetPasswordOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingReset}
+                  className="profile-btn-primary"
+                >
+                  {submittingReset ? 'Updating...' : 'Set Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

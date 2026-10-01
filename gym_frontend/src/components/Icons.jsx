@@ -141,3 +141,17 @@ export const ShieldIcon = ({ size = 16, color = 'currentColor', className = '' }
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
+
+export const LockIcon = ({ size = 16, color = 'currentColor', className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
+export const KeyIcon = ({ size = 16, color = 'currentColor', className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M21 2l-2 2m-1.5 1.5L14 9l-1.5-1.5L10 10l1.5 1.5L9 14l-1.5-1.5L5 15l2 2-3 3 1.5 1.5L8 19l2 2 3-3-1.5-1.5L14 14l1.5 1.5L18 13l-1.5-1.5 2.5-2.5" />
+    <circle cx="7.5" cy="7.5" r="3.5" />
+  </svg>
+);
