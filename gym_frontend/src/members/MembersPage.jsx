@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../auth/AuthContext';
 import { Navbar } from '../components/Navbar';
 import { MemberModal } from './MemberModal';
 import { AssignPlanModal } from '../memberships/AssignPlanModal';
 import { RecordPaymentModal } from '../payments/RecordPaymentModal';
 import { MemberHistoryModal } from '../payments/MemberHistoryModal';
 import { MemberAttendanceModal } from '../attendance/MemberAttendanceModal';
-import { getMembers, createMember, updateMember, getMember } from '../api/members';
+import { getMembers, createMember, updateMember, getMember, deleteMember } from '../api/members';
 
 export const MembersPage = () => {
+  const { user } = useAuth();
+  const isOwner = user?.role === 'OWNER';
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,6 +112,18 @@ export const MembersPage = () => {
       loadMembers();
     } catch (err) {
       console.error('Failed to toggle member status:', err);
+    }
+  };
+
+  const handleDeleteMember = async (member) => {
+    if (window.confirm(`Are you sure you want to permanently delete member "${member.full_name}"?`)) {
+      try {
+        await deleteMember(member.id);
+        loadMembers();
+      } catch (err) {
+        console.error('Failed to delete member:', err);
+        alert(err.response?.data?.detail || 'Failed to delete member.');
+      }
     }
   };
 
@@ -237,24 +252,35 @@ export const MembersPage = () => {
                           onClick={() => handleOpenAttendance(member)}
                           title="View member attendance log"
                         >
-                          🏃 Attendance
+                          Attendance
                         </button>
                         <button
                           className="btn-secondary btn-sm"
                           onClick={() => handleOpenHistory(member)}
                           title="View member payment receipts"
                         >
-                          📜 Ledger
+                          Ledger
                         </button>
                         <button className="btn-secondary btn-sm" onClick={() => handleOpenEdit(member)}>
                           Edit
                         </button>
-                        <button
-                          className={`btn-text btn-sm ${member.is_active ? 'text-danger' : 'text-success'}`}
-                          onClick={() => handleToggleStatus(member)}
-                        >
-                          {member.is_active ? 'Deactivate' : 'Activate'}
-                        </button>
+                        {isOwner && (
+                          <>
+                            <button
+                              className={`btn-text btn-sm ${member.is_active ? 'text-danger' : 'text-success'}`}
+                              onClick={() => handleToggleStatus(member)}
+                            >
+                              {member.is_active ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <button
+                              className="btn-text btn-sm text-danger"
+                              onClick={() => handleDeleteMember(member)}
+                              title="Permanently remove member"
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

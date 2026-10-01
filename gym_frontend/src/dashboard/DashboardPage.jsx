@@ -321,37 +321,69 @@ export const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Card 3: Revenue (Equalizer Rhythm Chart) */}
-          <div className="c-card c-card-revenue" onClick={() => navigate('/payments')}>
-            <div className="c-card-header">
-              <div className="c-card-badge badge-purple">
-                <CreditCardIcon size={18} color="#a78bfa" />
+          {/* Card 3: Revenue for Owner / Desk Status for Receptionist */}
+          {user?.role === 'OWNER' ? (
+            <div className="c-card c-card-revenue" onClick={() => navigate('/payments')}>
+              <div className="c-card-header">
+                <div className="c-card-badge badge-purple">
+                  <CreditCardIcon size={18} color="#a78bfa" />
+                </div>
+                <span className="c-card-title">Revenue</span>
+                <span className="c-card-timeframe">This Month</span>
               </div>
-              <span className="c-card-title">Revenue</span>
-              <span className="c-card-timeframe">This Month</span>
-            </div>
 
-            {/* Bar Rhythm Tally */}
-            <div className="equalizer-bar-group">
-              <div className="eq-bar eq-h40" />
-              <div className="eq-bar eq-h65" />
-              <div className="eq-bar eq-h50" />
-              <div className="eq-bar eq-h85 eq-glow" />
-              <div className="eq-bar eq-h70" />
-              <div className="eq-bar eq-h95 eq-highlight" />
-              <div className="eq-bar eq-h60" />
-            </div>
+              {/* Bar Rhythm Tally */}
+              <div className="equalizer-bar-group">
+                <div className="eq-bar eq-h40" />
+                <div className="eq-bar eq-h65" />
+                <div className="eq-bar eq-h50" />
+                <div className="eq-bar eq-h85 eq-glow" />
+                <div className="eq-bar eq-h70" />
+                <div className="eq-bar eq-h95 eq-highlight" />
+                <div className="eq-bar eq-h60" />
+              </div>
 
-            <div className="c-card-metric-footer">
-              <div className="c-card-big-number c-currency-val">
-                {formatNaira(metrics.month_revenue)}
-              </div>
-              <div className="c-card-sub-info">
-                <ClockIcon size={12} color="#a78bfa" />
-                <span>{formatNaira(metrics.today_revenue)} today</span>
+              <div className="c-card-metric-footer">
+                <div className="c-card-big-number c-currency-val">
+                  {formatNaira(metrics.month_revenue)}
+                </div>
+                <div className="c-card-sub-info">
+                  <ClockIcon size={12} color="#a78bfa" />
+                  <span>{formatNaira(metrics.today_revenue)} today</span>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="c-card c-card-revenue" onClick={() => navigate('/checkin')}>
+              <div className="c-card-header">
+                <div className="c-card-badge badge-purple">
+                  <ShieldIcon size={18} color="#a78bfa" />
+                </div>
+                <span className="c-card-title">Front Desk</span>
+                <span className="c-card-timeframe">Desk Shift</span>
+              </div>
+
+              <div className="equalizer-bar-group">
+                <div className="eq-bar eq-h60" />
+                <div className="eq-bar eq-h80 eq-glow" />
+                <div className="eq-bar eq-h60" />
+                <div className="eq-bar eq-h95 eq-highlight" />
+                <div className="eq-bar eq-h70" />
+                <div className="eq-bar eq-h85 eq-glow" />
+                <div className="eq-bar eq-h60" />
+              </div>
+
+              <div className="c-card-metric-footer">
+                <div className="c-card-big-number" style={{ fontSize: '1.35rem' }}>
+                  Check-in Active
+                </div>
+                <div className="c-card-sub-info">
+                  <CheckCircleIcon size={12} color="#34d399" />
+                  <span>Ready for arrivals & walk-ins</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Speedometer Radial Gauge Widget (Matching Reference) */}

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../auth/AuthContext';
 import { Navbar } from '../components/Navbar';
 import { getPayments, getPaymentSummary } from '../api/payments';
 
 export const PaymentsPage = () => {
+  const { user } = useAuth();
+  const isOwner = user?.role === 'OWNER';
   const [payments, setPayments] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,12 +16,19 @@ export const PaymentsPage = () => {
     try {
       const params = {};
       if (methodFilter !== 'all') params.method = methodFilter;
-      const [paymentsData, summaryData] = await Promise.all([
-        getPayments(params),
-        getPaymentSummary(),
-      ]);
-      setPayments(paymentsData);
-      setSummary(summaryData);
+
+      if (isOwner) {
+        const [paymentsData, summaryData] = await Promise.all([
+          getPayments(params),
+          getPaymentSummary(),
+        ]);
+        setPayments(paymentsData);
+        setSummary(summaryData);
+      } else {
+        const paymentsData = await getPayments(params);
+        setPayments(paymentsData);
+        setSummary(null);
+      }
     } catch (err) {
       console.error('Failed to load payments data:', err);
     } finally {
@@ -59,11 +69,15 @@ export const PaymentsPage = () => {
         <div className="page-header">
           <div>
             <h1>Financial Ledger & Payments</h1>
-            <p className="page-subtitle">Track incoming membership subscription fees, receipts, and staff entries.</p>
+            <p className="page-subtitle">
+              {isOwner
+                ? 'Track incoming membership subscription fees, receipts, and staff entries.'
+                : "Shift desk receipts and membership payments recorded today."}
+            </p>
           </div>
         </div>
 
-        {summary && (
+        {isOwner && summary && (
           <div className="metric-cards-grid">
             <div className="metric-card">
               <span className="metric-label">Total Revenue Collected</span>
