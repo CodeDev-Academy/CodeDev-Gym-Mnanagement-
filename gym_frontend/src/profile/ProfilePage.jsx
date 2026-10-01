@@ -313,6 +313,7 @@ export const ProfilePage = () => {
     try {
       await resetStaffPassword(selectedStaff.id, {
         new_password: resetPasswordForm.new_password,
+        confirm_password: resetPasswordForm.confirm_password,
       });
       setStaffSuccess(`Password for @${selectedStaff.username} updated successfully.`);
       setIsResetPasswordOpen(false);
@@ -324,6 +325,10 @@ export const ProfilePage = () => {
       if (errorData) {
         if (errorData.new_password) {
           msg = Array.isArray(errorData.new_password) ? errorData.new_password[0] : errorData.new_password;
+        } else if (errorData.confirm_password) {
+          msg = Array.isArray(errorData.confirm_password) ? errorData.confirm_password[0] : errorData.confirm_password;
+        } else if (errorData.non_field_errors) {
+          msg = Array.isArray(errorData.non_field_errors) ? errorData.non_field_errors[0] : errorData.non_field_errors;
         } else if (errorData.detail) {
           msg = errorData.detail;
         }
