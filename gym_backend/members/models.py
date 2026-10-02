@@ -13,6 +13,11 @@ class Member(models.Model):
     photo = models.FileField(upload_to='members/photos/', blank=True, null=True)
     date_joined = models.DateField(default=timezone.localdate)
     is_active = models.BooleanField(default=True)
+    last_inactivity_reminder_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text='Tracks when the 14-day inactivity reminder was last sent to avoid duplicate messages.',
+    )
 
     class Meta:
         db_table = 'member'
