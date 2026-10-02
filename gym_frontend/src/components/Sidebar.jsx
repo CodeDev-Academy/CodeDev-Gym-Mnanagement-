@@ -6,6 +6,7 @@ import {
   HomeIcon,
   CheckInIcon,
   UsersIcon,
+  BellIcon,
   LayersIcon,
   CreditCardIcon,
   UserIcon,
@@ -62,6 +63,17 @@ export const Sidebar = () => {
         >
           <UsersIcon size={22} />
           <span className="sidebar-tooltip">Members</span>
+        </NavLink>
+
+        <NavLink
+          to="/reminders"
+          className={({ isActive }) =>
+            `sidebar-nav-btn ${isActive ? 'active' : ''}`
+          }
+          title="Retention & Reminders"
+        >
+          <BellIcon size={22} />
+          <span className="sidebar-tooltip">Reminders</span>
         </NavLink>
 
         <NavLink

@@ -10,6 +10,7 @@ import { MembersPage } from './members/MembersPage';
 import { PaymentsPage } from './payments/PaymentsPage';
 import { CheckInPage } from './checkin/CheckInPage';
 import { ProfilePage } from './profile/ProfilePage';
+import { RemindersDeskPage } from './reminders/RemindersDeskPage';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/checkin" element={<CheckInPage />} />
             <Route path="/members" element={<MembersPage />} />
+            <Route path="/reminders" element={<RemindersDeskPage />} />
             <Route path="/plans" element={<PlansPage />} />
             <Route path="/payments" element={<PaymentsPage />} />
             <Route path="/profile" element={<ProfilePage />} />

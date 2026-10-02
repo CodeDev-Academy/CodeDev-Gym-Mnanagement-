@@ -3850,3 +3850,390 @@ body {
   opacity: 0.5;
 }
 
+/* ==========================================================================
+   Reminders & Retention Desk Styles
+   ========================================================================== */
+
+.reminders-summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.85rem 1.25rem;
+  border-radius: 14px;
+  margin-bottom: 1.25rem;
+}
+
+.summary-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.summary-stat-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-stat-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.15rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.summary-tags-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.summary-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.summary-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.summary-pill-btn.active {
+  background: rgba(255, 87, 34, 0.15);
+  border-color: rgba(255, 87, 34, 0.4);
+  color: #ff7043;
+}
+
+.pill-counter {
+  padding: 0.1rem 0.45rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Tabs Header */
+.reminders-tabs-header {
+  margin-bottom: 1rem;
+  overflow-x: auto;
+}
+
+.reminders-tabs-list {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.5rem;
+}
+
+.reminders-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: transparent;
+  border: none;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.reminders-tab-btn:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.reminders-tab-btn.active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.tab-badge {
+  padding: 0.15rem 0.55rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badge-amber {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.badge-blue {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.badge-orange {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.4);
+}
+
+.badge-red {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.badge-purple {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+}
+
+/* Chip variants */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.chip-amber {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.chip-blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.chip-orange {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fdba74;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.chip-red {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.chip-purple {
+  background: rgba(168, 85, 247, 0.15);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+/* Toolbar Card */
+.reminders-toolbar-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: rgba(17, 24, 39, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.toolbar-subtitle {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.checkbox-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-control input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #ff5722;
+  cursor: pointer;
+}
+
+/* WhatsApp Action Button */
+.btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: #25D366;
+  color: #0b1e13;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.25);
+  white-space: nowrap;
+}
+
+.btn-whatsapp:hover {
+  background: #20bd5a;
+  color: #000000;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+}
+
+.btn-whatsapp-lg {
+  padding: 0.65rem 1.25rem;
+  font-size: 0.92rem;
+}
+
+/* Message snippet */
+.message-snippet {
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.message-snippet:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.row-selected {
+  background: rgba(255, 87, 34, 0.06) !important;
+}
+
+.btn-icon-subtle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-icon-subtle:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.table-actions-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Template Card Drawer Styles */
+.templates-variables-callout {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.6;
+}
+
+.templates-variables-callout code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  color: #bfdbfe;
+  font-family: monospace;
+  margin: 0 0.25rem;
+}
+
+.templates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.template-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.template-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.template-card-title {
+  margin: 0 0 0.2rem 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.template-card-key {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-family: monospace;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
