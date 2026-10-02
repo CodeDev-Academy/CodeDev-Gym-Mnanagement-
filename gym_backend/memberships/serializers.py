@@ -2,7 +2,7 @@ from datetime import timedelta
 from django.utils import timezone
 from rest_framework import serializers
 from members.models import Member
-from .models import MembershipPlan, Subscription
+from .models import MembershipPlan, Subscription, ReminderTemplate
 
 
 class MembershipPlanSerializer(serializers.ModelSerializer):
@@ -72,3 +72,10 @@ class AssignPlanSerializer(serializers.Serializer):
 
     def to_representation(self, instance):
         return SubscriptionSerializer(instance).data
+
+
+class ReminderTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReminderTemplate
+        fields = ['id', 'key', 'title', 'body', 'is_active', 'updated_at']
+        read_only_fields = ['id', 'key', 'updated_at']
