@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getPlans } from '../api/plans';
 import { assignPlan } from '../api/subscriptions';
+import { WhatsAppIcon } from '../components/Icons';
 
 export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
   const [plans, setPlans] = useState([]);
@@ -9,11 +10,13 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [receiptData, setReceiptData] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
       setStartDate(new Date().toISOString().split('T')[0]);
       setError('');
+      setReceiptData(null);
       loadActivePlans();
     }
   }, [isOpen]);
@@ -66,13 +69,13 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
 
     setSubmitting(true);
     try {
-      await assignPlan({
+      const res = await assignPlan({
         member: member.id,
         plan: parseInt(selectedPlanId, 10),
         start_date: startDate,
       });
+      setReceiptData(res);
       if (onSuccess) onSuccess();
-      onClose();
     } catch (err) {
       if (err.response && err.response.data) {
         const errorMsg = Object.entries(err.response.data)
@@ -86,6 +89,77 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
       setSubmitting(false);
     }
   };
+
+  const handleDone = () => {
+    if (onSuccess) onSuccess();
+    onClose();
+  };
+
+  if (receiptData) {
+    return (
+      <div className="modal-overlay" onClick={handleDone}>
+        <div className="modal-card modal-lg" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <div>
+              <h3 style={{ margin: 0, color: '#f8fafc' }}>Subscription Activated!</h3>
+              <p className="page-subtitle" style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem' }}>
+                Instant Member Welcome & Digital Receipt
+              </p>
+            </div>
+            <button className="modal-close-btn" onClick={handleDone}>✕</button>
+          </div>
+
+          <div className="receipt-success-card">
+            <div className="receipt-summary-grid">
+              <div className="receipt-stat">
+                <span className="receipt-label">Member</span>
+                <span className="receipt-value">{member.full_name}</span>
+              </div>
+              <div className="receipt-stat">
+                <span className="receipt-label">Phone</span>
+                <span className="receipt-value">{member.phone_number}</span>
+              </div>
+              <div className="receipt-stat">
+                <span className="receipt-label">Plan</span>
+                <span className="receipt-value">{receiptData.plan_name}</span>
+              </div>
+              <div className="receipt-stat">
+                <span className="receipt-label">Valid Until</span>
+                <span className="receipt-value">{receiptData.end_date}</span>
+              </div>
+            </div>
+
+            <div className="receipt-message-preview">
+              <label className="form-label" style={{ marginBottom: '0.4rem', color: '#94a3b8', fontSize: '0.82rem' }}>
+                Prepared WhatsApp Welcome & Receipt Message:
+              </label>
+              <div className="receipt-message-box">
+                {receiptData.welcome_message}
+              </div>
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button type="button" className="btn-secondary" onClick={handleDone}>
+                Done / Later
+              </button>
+              <a
+                href={receiptData.whatsapp_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-whatsapp btn-whatsapp-lg"
+                onClick={() => {
+                  setTimeout(handleDone, 1200);
+                }}
+              >
+                <WhatsAppIcon size={18} />
+                Send WhatsApp Welcome Receipt
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>

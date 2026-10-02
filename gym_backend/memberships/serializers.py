@@ -49,6 +49,9 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'end_date', 'reminder_sent', 'reminder_sent_at']
 
 
+from .utils import render_template, wa_url
+
+
 class AssignPlanSerializer(serializers.Serializer):
     member = serializers.PrimaryKeyRelatedField(queryset=Member.objects.all())
     plan = serializers.PrimaryKeyRelatedField(queryset=MembershipPlan.objects.all())
@@ -71,7 +74,18 @@ class AssignPlanSerializer(serializers.Serializer):
         return subscription
 
     def to_representation(self, instance):
-        return SubscriptionSerializer(instance).data
+        data = SubscriptionSerializer(instance).data
+        welcome_copy = render_template(
+            'welcome_sub',
+            "Welcome to Abuja Gym, {name}! Your {plan_name} subscription is active until {end_date}. Receipt Amount: NGN {price}. See you on the gym floor!",
+            name=instance.member.full_name,
+            plan_name=instance.plan.name,
+            end_date=str(instance.end_date),
+            price=f"{instance.plan.price:,.2f}",
+        )
+        data['welcome_message'] = welcome_copy
+        data['whatsapp_url'] = wa_url(instance.member.phone_number, welcome_copy)
+        return data
 
 
 class ReminderTemplateSerializer(serializers.ModelSerializer):
