@@ -50,15 +50,19 @@ Checklist-style breakdown by phase. Work top to bottom — each phase should be 
 - [x] Full walkthrough test: add member → assign plan → record payment → check in → confirm dashboard reflects all of it
 - [x] **MVP considered complete at this point**
 
-## Phase 5 — n8n Automation: Expiry Reminders
+## Phase 5 — Retention, Expiry Reminders & Notifications
 
-- [ ] Add `reminder_sent` / `reminder_sent_at` fields to `Subscription` (if not already in Phase 0 models)
-- [ ] `GET /api/subscriptions/expiring-soon/?days=3` endpoint
-- [ ] `PATCH /api/subscriptions/<id>/mark-reminded/` endpoint
-- [ ] Generate static API token for n8n, configure as n8n credential
-- [ ] Build n8n workflow: Schedule Trigger → HTTP Request → Loop → WhatsApp send → mark-reminded
-- [ ] Test with a manually-set subscription expiring in 3 days
-- [ ] Confirm no duplicate message sent the next day
+- [x] Add `reminder_sent` / `reminder_sent_at` / `lapsed_stage` / `last_lapsed_reminder_at` fields to `Subscription`
+- [x] Add `last_inactivity_reminder_at` field to `Member`
+- [x] Create and seed `ReminderTemplate` model with customizable copy
+- [x] `GET /api/subscriptions/expiring-soon/?days=3` endpoint
+- [x] `PATCH /api/subscriptions/<id>/mark-reminded/` endpoint
+- [x] `GET /api/reminders/pending/` endpoint (5 retention queues: 3-day expiry, 7-day lapsed, 30-day lapsed, 60-day lapsed, 14-day absent pass holders)
+- [x] `POST /api/reminders/mark-sent/` endpoint for batch milestone progression
+- [x] Instant Subscription Welcome & Digital Receipt on plan assignment (`POST /api/subscriptions/`)
+- [x] Frontend Retention & Reminders Desk at `/reminders` with tabs, batch selection, template customizer, and 1-Click WhatsApp Web direct chat
+- [ ] Build/import n8n automated reminder workflow (Schedule Trigger → HTTP Request → WhatsApp Send → Mark Sent)
+- [ ] Configure Twilio WhatsApp credentials for automated background dispatch
 
 ## Phase 6 — n8n Automation: Daily Owner Report
 
