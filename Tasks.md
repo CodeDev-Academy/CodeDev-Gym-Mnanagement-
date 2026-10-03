@@ -61,8 +61,8 @@ Checklist-style breakdown by phase. Work top to bottom — each phase should be 
 - [x] `POST /api/reminders/mark-sent/` endpoint for batch milestone progression
 - [x] Instant Subscription Welcome & Digital Receipt on plan assignment (`POST /api/subscriptions/`)
 - [x] Frontend Retention & Reminders Desk at `/reminders` with tabs, batch selection, template customizer, and 1-Click WhatsApp Web direct chat
-- [ ] Build/import n8n automated reminder workflow (Schedule Trigger → HTTP Request → WhatsApp Send → Mark Sent)
-- [ ] Configure Twilio WhatsApp credentials for automated background dispatch
+- [x] Build/import n8n automated reminder workflow (Schedule Trigger → HTTP Request → WhatsApp Send → Mark Sent)
+- [x] Configure Twilio WhatsApp credentials for automated background dispatch
 
 ## Phase 6 — n8n Automation: Daily Owner Report
 

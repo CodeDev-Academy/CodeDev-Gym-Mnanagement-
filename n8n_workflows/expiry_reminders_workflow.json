@@ -1,0 +1,393 @@
+{
+  "name": "Abuja Gym — 3-Day Expiry Reminders",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-node",
+      "name": "Schedule Daily 8AM WAT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "param-api-url",
+              "name": "api_base_url",
+              "value": "={{ $vars.API_BASE_URL || 'https://gym-api.up.railway.app' }}",
+              "type": "string"
+            },
+            {
+              "id": "param-days-ahead",
+              "name": "days_ahead",
+              "value": 3,
+              "type": "number"
+            },
+            {
+              "id": "param-twilio-sender",
+              "name": "twilio_whatsapp_sender",
+              "value": "={{ $vars.TWILIO_WHATSAPP_SENDER || 'whatsapp:+14155238886' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "init-env-node",
+      "name": "Initialize Environment",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Initialize Environment').item.json.api_base_url }}/api/subscriptions/expiring-soon/?days=3",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "retry": {
+            "retry": {
+              "maxTries": 3,
+              "waitBetweenTries": 5000
+            }
+          }
+        }
+      },
+      "id": "http-fetch-expiring",
+      "name": "Fetch Expiring Subscriptions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gym_api_token",
+          "name": "Gym API Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "has-items-condition",
+              "leftValue": "={{ $json.id || ($json[0] && $json[0].id) ? 1 : 0 }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-expiries-found",
+      "name": "Any Expiring Members?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        940,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "split-batch-node",
+      "name": "Process One by One",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1200,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const item = $input.item.json;\n\n// Edge Case 2: Strict E.164 sanitizer\nfunction toE164(phone) {\n  if (!phone) return '';\n  let digits = String(phone).replace(/\\D/g, '');\n  if (digits.startsWith('0') && digits.length === 11) {\n    digits = '234' + digits.slice(1);\n  } else if (digits.startsWith('234') && digits.length === 13) {\n    // already Nigerian international without +\n  }\n  return 'whatsapp:+' + digits;\n}\n\nconst rawPhone = item.phone_number || '';\nconst formattedPhone = toE164(rawPhone);\nconst memberName = item.member_name || 'Valued Member';\nconst planName = item.plan_name || 'Gym Pass';\nconst daysLeft = item.days_left !== undefined ? item.days_left : 3;\nconst endDate = item.end_date || '';\n\n// Edge Case 1: Friendly personalized message copy\nconst messageBody = `Hi ${memberName}! 🏋️‍♂️\\n\\nYour ${planName} pass at Abuja Gym expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'} (${endDate}).\\n\\nRenew early so your training routine stays smooth and uninterrupted! We look forward to seeing you on the gym floor. 💪`;\n\nreturn {\n  json: {\n    subscription_id: item.id || item.subscription_id,\n    member_id: item.member_id,\n    member_name: memberName,\n    raw_phone: rawPhone,\n    whatsapp_to: formattedPhone,\n    days_left: daysLeft,\n    end_date: endDate,\n    message_body: messageBody,\n    is_valid_phone: formattedPhone.length >= 13\n  }\n};"
+      },
+      "id": "sanitize-phone-node",
+      "name": "Sanitize Phone & Format Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sms",
+        "from": "={{ $('Initialize Environment').item.json.twilio_whatsapp_sender }}",
+        "to": "={{ $json.whatsapp_to }}",
+        "message": "={{ $json.message_body }}"
+      },
+      "id": "twilio-send-whatsapp",
+      "name": "Send WhatsApp via Twilio",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        220
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "twilio_account",
+          "name": "Twilio Account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "id": "delivery-check-condition",
+              "leftValue": "={{ $json.status || ($json.error ? 'failed' : 'sent') }}",
+              "rightValue": "failed",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-sent-successfully",
+      "name": "Dispatched Successfully?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Initialize Environment').item.json.api_base_url }}/api/subscriptions/{{ $('Sanitize Phone & Format Message').item.json.subscription_id }}/mark-reminded/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "retry": {
+            "retry": {
+              "maxTries": 3,
+              "waitBetweenTries": 3000
+            }
+          }
+        }
+      },
+      "id": "http-mark-reminded",
+      "name": "Mark Subscription Reminded",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2160,
+        180
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gym_api_token",
+          "name": "Gym API Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1.5,
+        "unit": "seconds"
+      },
+      "id": "rate-limit-wait-node",
+      "name": "1.5s Rate Limit Pacer",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2400,
+        220
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "noop-no-expiries",
+      "name": "No Pending Expiries",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Daily 8AM WAT": {
+      "main": [
+        [
+          {
+            "node": "Initialize Environment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Initialize Environment": {
+      "main": [
+        [
+          {
+            "node": "Fetch Expiring Subscriptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Expiring Subscriptions": {
+      "main": [
+        [
+          {
+            "node": "Any Expiring Members?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Expiring Members?": {
+      "main": [
+        [
+          {
+            "node": "Process One by One",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Pending Expiries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process One by One": {
+      "main": [
+        [
+          {
+            "node": "Sanitize Phone & Format Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitize Phone & Format Message": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp via Twilio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp via Twilio": {
+      "main": [
+        [
+          {
+            "node": "Dispatched Successfully?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dispatched Successfully?": {
+      "main": [
+        [
+          {
+            "node": "Mark Subscription Reminded",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "1.5s Rate Limit Pacer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Subscription Reminded": {
+      "main": [
+        [
+          {
+            "node": "1.5s Rate Limit Pacer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1.5s Rate Limit Pacer": {
+      "main": [
+        [
+          {
+            "node": "Process One by One",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Lagos",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  }
+}

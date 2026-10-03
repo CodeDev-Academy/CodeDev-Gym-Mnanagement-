@@ -13,10 +13,14 @@ Living document tracking what's actually been done, current state, and decisions
 
 ## Current Status
 
-**Phase:** 4 — Dashboard (MVP Launch Point COMPLETED ✅ 🚀)
-**Last updated:** 2026-09-27
+**Phase:** 5 — Retention, Expiry Reminders & Notifications (COMPLETED ✅ 🚀)
+**Last updated:** 2026-10-03
 
-Phases 0 through 4 are 100% complete and fully verified via an end-to-end integration walkthrough test. The core Gym Management System MVP is now fully functional! All core operations (Auth, Members, Plans, Subscriptions, Payments & Renewals, Check-in/Attendance, and Central Executive Dashboard) are operating seamlessly. The next milestone is Phase 5 — n8n Automation for Expiry Reminders.
+Phases 0 through 5 are 100% complete and fully verified. The core MVP and the Retention & Automation Engine are fully functional:
+- 5 retention queues, batch progression endpoints, customized template engine, and 1-click WhatsApp Web desk.
+- Automated n8n 3-Day Expiry Reminders workflow (`expiry_reminders_workflow.json`) built with all 7 enterprise risk safeguards (E.164 pre-flight sanitizer, atomic item-by-item loop, `onError: continueRegularOutput`, `automation_bot` static token, 1.5s rate-limit pacer, and `Africa/Lagos` timezone).
+- The next milestone is Phase 6: Daily Owner Summary Report automation.
+
 
 ## Decisions Locked In
 
@@ -36,6 +40,14 @@ Phases 0 through 4 are 100% complete and fully verified via an end-to-end integr
 - `reminder_sent` resets to `False` on every renewal
 
 ## Session Log
+
+### 2026-10-03
+- Completed Phase 5 Automation Setup & Risk Hardening:
+  - Built canonical E.164 phone normalization and validation in Django `Member` model and DRF serializer.
+  - Implemented `python manage.py setup_automation_bot` management command providing idempotent service account creation and permanent static API token.
+  - Authored production-ready `expiry_reminders_workflow.json` with all 7 enterprise risk safeguards: E.164 normalizer, atomic item loop, `onError: continueRegularOutput`, static token authentication, 1.5s rate-limit pacer, and `Africa/Lagos` timezone.
+  - Created complete integration guide `n8n_workflows/README.md` covering Railway n8n import, Header Auth configuration, Twilio Sandbox setup, and ngrok tunnel setup.
+  - Test suite passing at 30/30 tests.
 
 ### 2026-09-28
 - Configured Git version control: Created clean root `.gitignore` excluding Python `venv`, `node_modules`, `db.sqlite3`, and build artifacts. Initialized Git repository, committed entire MVP codebase (118 files, 10,504 lines), connected remote GitHub origin (`https://github.com/CodeDev-Academy/CodeDev-Gym-Mnanagement-.git`), and pushed to `main` branch.
