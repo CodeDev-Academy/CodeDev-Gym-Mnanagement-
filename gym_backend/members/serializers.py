@@ -1,5 +1,7 @@
 from rest_framework import serializers
+from django.core.exceptions import ValidationError as DjangoValidationError
 from .models import Member
+from .utils import normalize_phone_number, validate_e164_phone
 
 
 class MemberSerializer(serializers.ModelSerializer):
@@ -17,10 +19,16 @@ class MemberSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
     def validate_phone_number(self, value):
-        cleaned = value.strip().replace(' ', '').replace('-', '')
-        if not cleaned:
+        if not value:
             raise serializers.ValidationError("Phone number cannot be empty.")
-        return cleaned
+        normalized = normalize_phone_number(value)
+        try:
+            validate_e164_phone(normalized)
+        except DjangoValidationError as e:
+            msg = e.messages[0] if hasattr(e, 'messages') and e.messages else str(e)
+            raise serializers.ValidationError(msg)
+        return normalized
+
 
 
 class MemberDetailSerializer(serializers.ModelSerializer):

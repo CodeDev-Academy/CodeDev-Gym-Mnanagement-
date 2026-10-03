@@ -206,3 +206,31 @@ class StaffManagementTests(TestCase):
         self.self_staff.refresh_from_db()
         self.assertTrue(self.self_staff.is_active)
 
+
+class SetupAutomationBotCommandTests(TestCase):
+    def test_setup_automation_bot_creates_user_and_token(self):
+        from io import StringIO
+        from django.core.management import call_command
+        from rest_framework.authtoken.models import Token
+
+        out = StringIO()
+        call_command('setup_automation_bot', stdout=out)
+        output = out.getvalue()
+
+        self.assertIn('AUTOMATION BOT SERVICE ACCOUNT CONFIGURED', output)
+        self.assertIn('Username    : automation_bot', output)
+
+        bot_user = User.objects.get(username='automation_bot')
+        self.assertEqual(bot_user.role, 'OWNER')
+        self.assertTrue(bot_user.is_active)
+        self.assertFalse(bot_user.has_usable_password())
+
+        token = Token.objects.get(user=bot_user)
+        self.assertIn(token.key, output)
+
+        # Verify idempotency
+        out2 = StringIO()
+        call_command('setup_automation_bot', stdout=out2)
+        self.assertIn('Retrieved existing token', out2.getvalue())
+
+

@@ -1,5 +1,7 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from .utils import normalize_phone_number, validate_e164_phone
 
 
 class Member(models.Model):
@@ -23,5 +25,17 @@ class Member(models.Model):
         db_table = 'member'
         ordering = ['-date_joined', 'full_name']
 
+    def clean(self):
+        super().clean()
+        if self.phone_number:
+            self.phone_number = normalize_phone_number(self.phone_number)
+            validate_e164_phone(self.phone_number)
+
+    def save(self, *args, **kwargs):
+        if self.phone_number:
+            self.phone_number = normalize_phone_number(self.phone_number)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.full_name} ({self.phone_number})"
+
