@@ -36,13 +36,15 @@ python manage.py setup_automation_bot
 
 ---
 
-## 2. Importing Workflow into Railway n8n
+## 2. Live Workflow on Railway n8n
 
-1. Log in to your **n8n instance on Railway**.
-2. Click **Workflows** ➔ **Add Workflow** (or the `+` icon).
-3. In the top-right menu (three dots `⋮`), select **Import from File...**.
-4. Choose `n8n_workflows/expiry_reminders_workflow.json` (or copy/paste the JSON directly).
-5. The complete workflow will render on your canvas.
+The workflow has been provisioned and inserted directly into your Railway n8n workspace:
+- **Direct Canvas Link:** [https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL](https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL)
+- **Workflow ID:** `dcR81UrElWSeIJjL`
+- **Workflow Name:** `Abuja Gym — 3-Day Expiry Reminders`
+
+You can open the canvas directly using the link above!
+
 
 ---
 
