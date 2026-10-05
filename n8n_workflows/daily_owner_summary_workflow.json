@@ -1,0 +1,139 @@
+{
+  "name": "Abuja Gym — Daily Owner Summary Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-7am",
+      "name": "Schedule Daily 7AM WAT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $vars.API_BASE_URL || 'https://gym-api.up.railway.app' }}/api/dashboard/daily-summary/?date=yesterday",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Token {{ $vars.API_TOKEN || '6b0a703984803148e8c5ae42b621200ccfb44ea0' }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "retry": {
+            "retry": {
+              "maxTries": 3,
+              "waitBetweenTries": 5000
+            }
+          }
+        }
+      },
+      "id": "http-fetch-summary",
+      "name": "Fetch Yesterday Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const data = $input.item.json;\n\nfunction toE164(phone) {\n  if (!phone) return '';\n  let digits = String(phone).replace(/\\D/g, '');\n  if (digits.startsWith('0') && digits.length === 11) {\n    digits = '234' + digits.slice(1);\n  } else if (digits.startsWith('234') && digits.length === 13) {\n    // already 234\n  }\n  return 'whatsapp:+' + digits;\n}\n\nconst revenue = Number(data.revenue_today || 0);\nconst formattedRevenue = '₦' + revenue.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\nconst dateStr = data.formatted_date || data.date || 'Yesterday';\nconst checkins = data.checkins_today || 0;\nconst uniqueCheckins = data.unique_checkins_today || 0;\nconst newMembers = data.new_members_today || 0;\nconst expiring = data.expiring_today || 0;\n\nconst rawOwnerPhone = $vars.OWNER_WHATSAPP_NUMBER || '+2348012345678';\nconst ownerPhone = toE164(rawOwnerPhone);\n\nlet activityNote = 'Great workout momentum across all shifts!';\nif (checkins === 0 && revenue === 0) {\n  activityNote = 'Rest day / Gym closed (0 check-ins recorded).';\n}\n\nconst messageBody = `📊 *ABUJA GYM — EXECUTIVE DAILY REPORT*\\n` +\n  `📅 *Date:* ${dateStr} (Full 24h Wrap-up)\\n` +\n  `──────────────────────────\\n` +\n  `💰 *Revenue Collected:* ${formattedRevenue}\\n` +\n  `🏋️ *Total Check-ins:* ${checkins} workouts (${uniqueCheckins} unique athletes)\\n` +\n  `✨ *New Members Enrolled:* ${newMembers}\\n` +\n  `⚠️ *Subscriptions Expired:* ${expiring}\\n` +\n  `──────────────────────────\\n` +\n  `💡 ${activityNote}\\n\\n` +\n  `Have a productive day ahead at the gym! 💪`;\n\nreturn {\n  json: {\n    owner_phone: ownerPhone,\n    date: dateStr,\n    revenue: formattedRevenue,\n    checkins: checkins,\n    unique_checkins: uniqueCheckins,\n    new_members: newMembers,\n    expiring: expiring,\n    message_body: messageBody\n  }\n};"
+      },
+      "id": "code-format-card",
+      "name": "Format Executive Briefing Card",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "from": "={{ $vars.TWILIO_WHATSAPP_SENDER || 'whatsapp:+14155238886' }}",
+        "to": "={{ $json.owner_phone }}",
+        "message": "={{ $json.message_body }}"
+      },
+      "id": "twilio-send-owner",
+      "name": "Send WhatsApp to Owner",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        940,
+        300
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "twilio_account",
+          "name": "Twilio Account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Schedule Daily 7AM WAT": {
+      "main": [
+        [
+          {
+            "node": "Fetch Yesterday Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Yesterday Summary": {
+      "main": [
+        [
+          {
+            "node": "Format Executive Briefing Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Executive Briefing Card": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp to Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Lagos",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  }
+}

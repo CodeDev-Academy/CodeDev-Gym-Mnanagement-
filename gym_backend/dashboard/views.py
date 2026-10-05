@@ -156,27 +156,47 @@ class DailySummaryView(APIView):
 
 
     def get(self, request):
+        date_param = request.query_params.get('date', 'today')
         today = timezone.localdate()
 
-        new_members_today = Member.objects.filter(date_joined=today).count()
-        today_checkins = CheckIn.objects.filter(timestamp__date=today).count()
-        today_unique_checkins = (
-            CheckIn.objects.filter(timestamp__date=today)
+        if date_param == 'yesterday':
+            target_date = today - datetime.timedelta(days=1)
+            period_label = 'yesterday'
+        elif date_param != 'today':
+            try:
+                target_date = datetime.date.fromisoformat(date_param)
+                period_label = str(target_date)
+            except ValueError:
+                target_date = today
+                period_label = 'today'
+        else:
+            target_date = today
+            period_label = 'today'
+
+        new_members = Member.objects.filter(date_joined=target_date).count()
+        checkins = CheckIn.objects.filter(timestamp__date=target_date).count()
+        unique_checkins = (
+            CheckIn.objects.filter(timestamp__date=target_date)
             .values('member')
             .distinct()
             .count()
         )
 
-        today_rev_agg = Payment.objects.filter(payment_date__date=today).aggregate(total=Sum('amount'))
-        today_revenue = float(today_rev_agg['total'] or 0.00)
+        rev_agg = Payment.objects.filter(payment_date__date=target_date).aggregate(total=Sum('amount'))
+        revenue = float(rev_agg['total'] or 0.00)
 
-        expiring_today = Subscription.objects.filter(status='active', end_date=today).count()
+        expiring = Subscription.objects.filter(status='active', end_date=target_date).count()
+
+        formatted_date = target_date.strftime('%A, %d %b %Y')
 
         return Response({
-            'date': today.isoformat(),
-            'revenue_today': today_revenue,
-            'checkins_today': today_checkins,
-            'unique_checkins_today': today_unique_checkins,
-            'new_members_today': new_members_today,
-            'expiring_today': expiring_today,
+            'date': target_date.isoformat(),
+            'period': period_label,
+            'formatted_date': formatted_date,
+            'revenue_today': revenue,
+            'checkins_today': checkins,
+            'unique_checkins_today': unique_checkins,
+            'new_members_today': new_members,
+            'expiring_today': expiring,
         }, status=status.HTTP_200_OK)
+

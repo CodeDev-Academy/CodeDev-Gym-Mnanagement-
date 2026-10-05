@@ -65,10 +65,11 @@ Checklist-style breakdown by phase. Work top to bottom — each phase should be 
 - [x] Configure Twilio WhatsApp credentials for automated background dispatch
 
 ## Phase 6 — n8n Automation: Daily Owner Report
+ 
+- [x] `GET /api/dashboard/daily-summary/` endpoint (revenue today/yesterday, check-ins, unique athletes, new members, expirations)
+- [x] n8n workflow: Schedule Trigger (07:00 AM WAT) → HTTP Request → format executive Naira briefing → send to owner's WhatsApp
+- [x] Verify message arrives correctly formatted
 
-- [ ] `GET /api/dashboard/daily-summary/` endpoint (revenue today, check-ins today, new members today)
-- [ ] n8n workflow: Schedule Trigger (morning) → HTTP Request → format message → send to owner's WhatsApp
-- [ ] Verify message arrives correctly formatted
 
 ## Phase 7 — Flutterwave Integration
 

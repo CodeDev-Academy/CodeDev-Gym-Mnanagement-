@@ -15,10 +15,30 @@ This directory contains the production-grade automation workflows for the **Gym 
      - Individual immediate `PATCH /api/subscriptions/<id>/mark-reminded/` to eliminate duplicate sends.
      - `onError: continueRegularOutput` on carrier node to prevent dead phone numbers from crashing the batch.
      - Parameterized `API_BASE_URL` for local ngrok tunnels and production domains.
+   - **Live Railway Canvas:** [https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL](https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL) (ID: `dcR81UrElWSeIJjL`)
+
+2. **`daily_owner_summary_workflow.json` (Phase 6)**:
+   - **Trigger:** Daily at 07:00 AM West Africa Time (`Africa/Lagos`).
+   - **Endpoint:** `GET /api/dashboard/daily-summary/?date=yesterday`
+   - **Mitigations:**
+     - Full 24-hour cycle coverage: fires at 7:00 AM summarizing yesterday's complete 00:00 to 23:59 activity (never cuts off evening gym rush hours).
+     - Financial formatting in Nigerian Naira (`₦`).
+     - Safe 0-activity handling for rest days and holidays.
+     - Parameterized `OWNER_WHATSAPP_NUMBER` and `TWILIO_WHATSAPP_SENDER`.
+     - `onError: continueRegularOutput` fault isolation.
+   - **Live Railway Canvas:** [https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF](https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF) (ID: `8spZAMbk8eOlWJIF`)
 
 ---
 
-## 1. Prerequisites & Credentials
+## 1. Live Workflows on Railway n8n
+
+Both workflows have been provisioned and inserted directly into your Railway n8n workspace:
+1. **3-Day Expiry Reminders:** [https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL](https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL)
+2. **Daily Owner Summary Report:** [https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF](https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF)
+
+---
+
+## 2. Prerequisites & Credentials
 
 ### A. Django Service Account Token
 Your static background automation token has already been generated via:
@@ -34,16 +54,6 @@ python manage.py setup_automation_bot
 2. Under **Messaging** ➔ **Try it out** ➔ **Send a WhatsApp message**, locate your Twilio Sandbox phone number (usually `whatsapp:+14155238886`) and your unique join code (e.g. `join simple-word`).
 3. On your test phone (or gym owner's phone), send `join <your-code>` via WhatsApp to the Twilio number to activate the 24-hour sandbox testing window.
 
----
-
-## 2. Live Workflow on Railway n8n
-
-The workflow has been provisioned and inserted directly into your Railway n8n workspace:
-- **Direct Canvas Link:** [https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL](https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL)
-- **Workflow ID:** `dcR81UrElWSeIJjL`
-- **Workflow Name:** `Abuja Gym — 3-Day Expiry Reminders`
-
-You can open the canvas directly using the link above!
 
 
 ---

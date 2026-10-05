@@ -138,3 +138,24 @@ class RoleBasedAccessControlTests(TestCase):
         self.assertTrue(owner_resp.data['metrics']['is_owner'])
         self.assertIsNotNone(owner_resp.data['metrics']['month_revenue'])
         self.assertIsNotNone(owner_resp.data['metrics']['today_revenue'])
+
+    def test_daily_summary_endpoint_owner_and_yesterday_query(self):
+        # 1. Front-desk cannot access daily-summary (IsOwnerUser required)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.staff_token.key}')
+        staff_resp = self.client.get('/api/dashboard/daily-summary/')
+        self.assertEqual(staff_resp.status_code, status.HTTP_403_FORBIDDEN)
+
+        # 2. Owner can access today's summary
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.owner_token.key}')
+        resp_today = self.client.get('/api/dashboard/daily-summary/')
+        self.assertEqual(resp_today.status_code, status.HTTP_200_OK)
+        self.assertIn('revenue_today', resp_today.data)
+        self.assertIn('checkins_today', resp_today.data)
+        self.assertEqual(resp_today.data['period'], 'today')
+
+        # 3. Owner can query yesterday's completed summary
+        resp_yesterday = self.client.get('/api/dashboard/daily-summary/?date=yesterday')
+        self.assertEqual(resp_yesterday.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp_yesterday.data['period'], 'yesterday')
+        self.assertIn('formatted_date', resp_yesterday.data)
+

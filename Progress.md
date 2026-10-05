@@ -13,16 +13,19 @@ Living document tracking what's actually been done, current state, and decisions
 
 ## Current Status
 
-**Phase:** 5 — Retention, Expiry Reminders & Notifications (COMPLETED ✅ 🚀)
-**Last updated:** 2026-10-03
+**Phase:** 6 — n8n Automation: Daily Owner Report (COMPLETED ✅ 🚀)
+**Last updated:** 2026-10-05
 
-Phases 0 through 5 are 100% complete and fully verified. The core MVP and the Retention & Automation Engine are fully functional:
-- 5 retention queues, batch progression endpoints, customized template engine, and 1-click WhatsApp Web desk.
-- Automated n8n 3-Day Expiry Reminders workflow (`expiry_reminders_workflow.json`) built with all 7 enterprise risk safeguards (E.164 pre-flight sanitizer, atomic item-by-item loop, `onError: continueRegularOutput`, `automation_bot` static token, 1.5s rate-limit pacer, and `Africa/Lagos` timezone).
-- The next milestone is Phase 6: Daily Owner Summary Report automation.
-
+Phases 0 through 6 are 100% complete and fully verified:
+- Core MVP and Phase 5 Retention Desk & Automated Reminders active.
+- Phase 6 Daily Owner Summary Report active:
+  - Backend enhanced with `?date=yesterday` and custom dates in `DailySummaryView`, providing full 24-hour cycle reporting (00:00 to 23:59) so late-night gym sessions and renewals are captured with 100% fidelity.
+  - Automated n8n Morning Executive Briefing workflow (`daily_owner_summary_workflow.json` / ID `8spZAMbk8eOlWJIF`) provisioned directly in Railway n8n workspace, scheduled for 07:00 AM WAT, delivering Naira-formatted cards (`₦`) to the Owner's WhatsApp with Twilio error shielding.
+- All 31 backend tests passing with zero errors.
+- The next milestone is Phase 7: Flutterwave Payment Gateway Integration.
 
 ## Decisions Locked In
+
 
 - Single gym client, not a multi-gym SaaS product
 - Solo developer, no team
@@ -40,6 +43,15 @@ Phases 0 through 5 are 100% complete and fully verified. The core MVP and the Re
 - `reminder_sent` resets to `False` on every renewal
 
 ## Session Log
+
+### 2026-10-05
+- Completed Phase 6 (Daily Owner Summary Report):
+  - Upgraded `DailySummaryView` in `gym_backend/dashboard/views.py` to support `?date=yesterday` and custom dates, capturing the complete 00:00 to 23:59 operating day with formatted dates and zero-loss of evening peak hours.
+  - Added backend unit tests (`test_daily_summary_endpoint_owner_and_yesterday_query`) verifying RBAC and yesterday queries; test suite passing at 31/31 tests.
+  - Built and directly provisioned the automated Morning Executive Briefing workflow (`daily_owner_summary_workflow.json` / ID `8spZAMbk8eOlWJIF`) into Railway n8n workspace, scheduled for 07:00 AM WAT (`Africa/Lagos` timezone).
+  - Formatted WhatsApp briefing card with Nigerian Naira (`₦`), total check-ins, unique athletes, new registrations, expiries, and safe rest-day handling.
+  - Enabled Twilio fault isolation with `onError: continueRegularOutput`.
+  - Updated integration runbook `n8n_workflows/README.md` and [Tasks.md](file:///c:/Users/User/OneDrive/Desktop/Gym%20managment%20system/Tasks.md).
 
 ### 2026-10-03
 - Completed Phase 5 Automation Setup & Risk Hardening:
