@@ -40,7 +40,7 @@
             {
               "id": "param-twilio-sender",
               "name": "twilio_whatsapp_sender",
-              "value": "={{ $vars.TWILIO_WHATSAPP_SENDER || 'whatsapp:+14155238886' }}",
+              "value": "={{ $vars.TWILIO_WHATSAPP_SENDER || 'whatsapp:+17372212163' }}",
               "type": "string"
             }
           ]

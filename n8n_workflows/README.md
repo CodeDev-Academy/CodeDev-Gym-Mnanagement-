@@ -56,7 +56,7 @@ python manage.py setup_automation_bot
 
 ### B. Twilio WhatsApp Sandbox
 1. Log in to your [Twilio Console](https://console.twilio.com/).
-2. Under **Messaging** ➔ **Try it out** ➔ **Send a WhatsApp message**, locate your Twilio Sandbox phone number (usually `whatsapp:+14155238886`) and your unique join code (e.g. `join simple-word`).
+2. Under **Messaging** ➔ **Try it out** ➔ **Send a WhatsApp message**, locate your Twilio Sandbox phone number (`whatsapp:+17372212163`) and your join code (`join-twilio-trial`).
 3. On your test phone (or gym owner's phone), send `join <your-code>` via WhatsApp to the Twilio number to activate the 24-hour sandbox testing window.
 
 

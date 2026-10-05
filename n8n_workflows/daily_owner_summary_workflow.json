@@ -74,7 +74,7 @@
     {
       "parameters": {
         "operation": "send",
-        "from": "={{ $vars.TWILIO_WHATSAPP_SENDER || 'whatsapp:+14155238886' }}",
+        "from": "={{ $vars.TWILIO_WHATSAPP_SENDER || 'whatsapp:+17372212163' }}",
         "to": "={{ $json.owner_phone }}",
         "message": "={{ $json.message_body }}"
       },
