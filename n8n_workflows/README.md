@@ -30,15 +30,22 @@ This directory contains the production-grade automation workflows for the **Gym 
    - **Action:** Multi-stage win-back messages based on days since expiration; advances lapsed stages atomically via `POST /api/reminders/mark-sent/`.
    - **Live Railway Canvas:** [https://n8n-production-d5bb.up.railway.app/workflow/Ysn802Jb9S2YZiss](https://n8n-production-d5bb.up.railway.app/workflow/Ysn802Jb9S2YZiss) (ID: `Ysn802Jb9S2YZiss`)
 
+5. **`Shared Error Notification Handler` (Universal Failure Trigger)**:
+   - **Trigger:** Error Trigger (`n8n-nodes-base.errorTrigger`).
+   - **Target:** Sends instant markdown alerts to Telegram (`chatId: 5433612668`).
+   - **Payload Content:** Workflow Name, Workflow ID, Specific Failed Node name, Error Message, Execution ID, and Direct URL to execution inspect panel.
+   - **Live Railway Canvas:** [https://n8n-production-d5bb.up.railway.app/workflow/Qug3KsM2Rnq9RUel](https://n8n-production-d5bb.up.railway.app/workflow/Qug3KsM2Rnq9RUel) (ID: `Qug3KsM2Rnq9RUel`)
+
 ---
 
 ## 1. Live Workflows on Railway n8n
 
-All 4 production workflows are live and provisioned directly into your Railway n8n workspace:
-1. **3-Day Expiry Reminders:** [https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL](https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL)
-2. **Daily Owner Summary Report:** [https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF](https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF)
-3. **Inactive Member Rescue (14d):** [https://n8n-production-d5bb.up.railway.app/workflow/ozRzbNXoUt0P1DvI](https://n8n-production-d5bb.up.railway.app/workflow/ozRzbNXoUt0P1DvI)
-4. **Lapsed Member Win-Back (7d/30d/60d):** [https://n8n-production-d5bb.up.railway.app/workflow/Ysn802Jb9S2YZiss](https://n8n-production-d5bb.up.railway.app/workflow/Ysn802Jb9S2YZiss)
+All 4 production workflows are live and connected to the Universal Error Notification Handler (`Qug3KsM2Rnq9RUel`):
+1. **3-Day Expiry Reminders:** [https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL](https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL) (Error Handler attached)
+2. **Daily Owner Summary Report:** [https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF](https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF) (Error Handler attached)
+3. **Inactive Member Rescue (14d):** [https://n8n-production-d5bb.up.railway.app/workflow/ozRzbNXoUt0P1DvI](https://n8n-production-d5bb.up.railway.app/workflow/ozRzbNXoUt0P1DvI) (Error Handler attached)
+4. **Lapsed Member Win-Back (7d/30d/60d):** [https://n8n-production-d5bb.up.railway.app/workflow/Ysn802Jb9S2YZiss](https://n8n-production-d5bb.up.railway.app/workflow/Ysn802Jb9S2YZiss) (Error Handler attached)
+5. **Universal Telegram Error Handler:** [https://n8n-production-d5bb.up.railway.app/workflow/Qug3KsM2Rnq9RUel](https://n8n-production-d5bb.up.railway.app/workflow/Qug3KsM2Rnq9RUel)
 
 
 ---

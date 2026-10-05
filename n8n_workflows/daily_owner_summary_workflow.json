@@ -134,6 +134,7 @@
     "executionOrder": "v1",
     "timezone": "Africa/Lagos",
     "saveManualExecutions": true,
-    "saveExecutionProgress": true
+    "saveExecutionProgress": true,
+    "errorWorkflow": "Qug3KsM2Rnq9RUel"
   }
 }
