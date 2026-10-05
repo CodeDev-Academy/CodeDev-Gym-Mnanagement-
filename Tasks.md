@@ -71,18 +71,19 @@ Checklist-style breakdown by phase. Work top to bottom — each phase should be 
 - [x] Verify message arrives correctly formatted
 
 
-## Phase 7 — Flutterwave Integration
+## Phase 7 — Retention & Win-Back Automation Workflows (Option B Modular)
 
-- [ ] Flutterwave account/API keys set up
-- [ ] Payment initiation flow (React → Django → Flutterwave)
-- [ ] Webhook endpoint (`/api/payments/webhook/`) to receive payment confirmation
-- [ ] Webhook creates `Payment` record + extends subscription automatically
-- [ ] Test with Flutterwave sandbox
+- [x] Inactive Pass Holders Rescue (14-Day Absence) workflow (`inactive_members_workflow.json` / ID `ozRzbNXoUt0P1DvI`) — Mondays at 10:00 AM WAT
+- [x] Lapsed Member Win-Back Pipeline (7d, 30d, 60d) workflow (`lapsed_winback_workflow.json` / ID `Ysn802Jb9S2YZiss`) — Thursdays at 11:00 AM WAT
+- [x] Full atomic progression via `POST /api/reminders/mark-sent/` with cooldown protection
+- [x] Zero-blast-radius modular architecture with Twilio error shielding and rate-limit pacers
 
 ## Phase 8+ — Deferred / Conditional
 
+- [ ] Flutterwave online gateway — removed/deferred (gym operates on counter Cash, POS, and direct Bank Transfer at reception with zero gateway fees)
 - [ ] Class/trainer scheduling — only if the gym adds classes
 - [ ] Multi-location support — only if the gym expands to a second branch
+
 
 ## Deployment Tasks (parallel, once Phase 4 is stable)
 

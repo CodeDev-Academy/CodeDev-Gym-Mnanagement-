@@ -1,0 +1,262 @@
+{
+  "name": "Abuja Gym — Lapsed Member Win-Back Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 11 * * 4"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-lapsed",
+      "name": "Schedule Thursdays 11AM WAT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $vars.API_BASE_URL || 'https://gym-api.up.railway.app' }}/api/reminders/pending/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Token {{ $vars.API_TOKEN || '6b0a703984803148e8c5ae42b621200ccfb44ea0' }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "retry": {
+            "retry": {
+              "maxTries": 3,
+              "waitBetweenTries": 5000
+            }
+          }
+        }
+      },
+      "id": "http-fetch-pending-lapsed",
+      "name": "Fetch Pending Reminders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const data = $input.item.json;\nconst cats = data.categories || {};\nconst q7 = (cats.lapsed_7d || []).map(i => ({ ...i, category: 'lapsed_7d' }));\nconst q30 = (cats.lapsed_30d || []).map(i => ({ ...i, category: 'lapsed_30d' }));\nconst q60 = (cats.lapsed_60d || []).map(i => ({ ...i, category: 'lapsed_60d' }));\nconst all = [...q7, ...q30, ...q60];\nreturn all.map(item => ({ json: item }));"
+      },
+      "id": "code-extract-lapsed",
+      "name": "Extract Lapsed Queues",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "split-batch-lapsed",
+      "name": "Process One by One",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const item = $input.item.json;\n\nfunction toE164(phone) {\n  if (!phone) return '';\n  let digits = String(phone).replace(/\\D/g, '');\n  if (digits.startsWith('0') && digits.length === 11) {\n    digits = '234' + digits.slice(1);\n  }\n  return 'whatsapp:+' + digits;\n}\n\nconst rawPhone = item.phone_number || '';\nconst formattedPhone = toE164(rawPhone);\nconst memberName = item.member_name || 'Valued Athlete';\nconst planName = item.plan_name || 'Gym Membership';\nconst daysCount = item.days_count || 7;\nconst endDate = item.end_date || '';\n\nconst fallbackMsg = `Hi ${memberName}! We missed your energy at Abuja Gym. Your ${planName} ended on ${endDate}. Stop by the front desk anytime to renew and get right back into your training rhythm! 💪`;\nconst messageBody = item.prepared_message || fallbackMsg;\n\nreturn {\n  json: {\n    id: item.id,\n    subscription_id: item.id,\n    member_id: item.member_id,\n    category: item.category || 'lapsed_7d',\n    member_name: memberName,\n    raw_phone: rawPhone,\n    whatsapp_to: formattedPhone,\n    days_count: daysCount,\n    message_body: messageBody\n  }\n};"
+      },
+      "id": "code-sanitize-lapsed",
+      "name": "Sanitize Phone & Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "from": "={{ $vars.TWILIO_WHATSAPP_SENDER || 'whatsapp:+14155238886' }}",
+        "to": "={{ $json.whatsapp_to }}",
+        "message": "={{ $json.message_body }}"
+      },
+      "id": "twilio-send-lapsed",
+      "name": "Send WhatsApp via Twilio",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        300
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "twilio_account",
+          "name": "Twilio Account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.API_BASE_URL || 'https://gym-api.up.railway.app' }}/api/reminders/mark-sent/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Token {{ $vars.API_TOKEN || '6b0a703984803148e8c5ae42b621200ccfb44ea0' }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ category: $('Sanitize Phone & Message').item.json.category, subscription_ids: [$('Sanitize Phone & Message').item.json.id] }) }}"
+      },
+      "id": "http-advance-lapsed-stage",
+      "name": "Advance Lapsed Stage in DB",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 1.5,
+        "unit": "seconds"
+      },
+      "id": "wait-lapsed-pacer",
+      "name": "1.5s Rate Limit Pacer",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1780,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Thursdays 11AM WAT": {
+      "main": [
+        [
+          {
+            "node": "Fetch Pending Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Pending Reminders": {
+      "main": [
+        [
+          {
+            "node": "Extract Lapsed Queues",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Lapsed Queues": {
+      "main": [
+        [
+          {
+            "node": "Process One by One",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process One by One": {
+      "main": [
+        [
+          {
+            "node": "Sanitize Phone & Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitize Phone & Message": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp via Twilio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp via Twilio": {
+      "main": [
+        [
+          {
+            "node": "Advance Lapsed Stage in DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Advance Lapsed Stage in DB": {
+      "main": [
+        [
+          {
+            "node": "1.5s Rate Limit Pacer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1.5s Rate Limit Pacer": {
+      "main": [
+        [
+          {
+            "node": "Process One by One",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Lagos",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  }
+}

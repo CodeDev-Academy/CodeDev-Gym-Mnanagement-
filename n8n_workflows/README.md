@@ -9,32 +9,37 @@ This directory contains the production-grade automation workflows for the **Gym 
 1. **`expiry_reminders_workflow.json` (Phase 5)**:
    - **Trigger:** Daily at 08:00 AM West Africa Time (`Africa/Lagos`).
    - **Endpoint:** `GET /api/subscriptions/expiring-soon/?days=3`
-   - **Mitigations:**
-     - Pre-flight E.164 phone normalizer (strips dashes/spaces, formats `whatsapp:+234...`).
-     - Atomic loop (`Split In Batches` size 1) + 1.5s rate-limit pause.
-     - Individual immediate `PATCH /api/subscriptions/<id>/mark-reminded/` to eliminate duplicate sends.
-     - `onError: continueRegularOutput` on carrier node to prevent dead phone numbers from crashing the batch.
-     - Parameterized `API_BASE_URL` for local ngrok tunnels and production domains.
+   - **Action:** Sends 3-day pre-expiry warning to athlete; marks subscription reminded.
    - **Live Railway Canvas:** [https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL](https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL) (ID: `dcR81UrElWSeIJjL`)
 
 2. **`daily_owner_summary_workflow.json` (Phase 6)**:
    - **Trigger:** Daily at 07:00 AM West Africa Time (`Africa/Lagos`).
    - **Endpoint:** `GET /api/dashboard/daily-summary/?date=yesterday`
-   - **Mitigations:**
-     - Full 24-hour cycle coverage: fires at 7:00 AM summarizing yesterday's complete 00:00 to 23:59 activity (never cuts off evening gym rush hours).
-     - Financial formatting in Nigerian Naira (`₦`).
-     - Safe 0-activity handling for rest days and holidays.
-     - Parameterized `OWNER_WHATSAPP_NUMBER` and `TWILIO_WHATSAPP_SENDER`.
-     - `onError: continueRegularOutput` fault isolation.
+   - **Action:** Full 24h wrap-up (revenue `₦`, check-ins, unique athletes, new enrollees, expiries) sent to Owner's WhatsApp.
    - **Live Railway Canvas:** [https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF](https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF) (ID: `8spZAMbk8eOlWJIF`)
+
+3. **`inactive_members_workflow.json` (Phase 7)**:
+   - **Trigger:** Every Monday at 10:00 AM West Africa Time (`Africa/Lagos`).
+   - **Endpoint:** `GET /api/reminders/pending/` (extracts `inactive_14d` queue).
+   - **Action:** Re-engages active pass holders absent for 14+ days; marks cooldown via `POST /api/reminders/mark-sent/`.
+   - **Live Railway Canvas:** [https://n8n-production-d5bb.up.railway.app/workflow/ozRzbNXoUt0P1DvI](https://n8n-production-d5bb.up.railway.app/workflow/ozRzbNXoUt0P1DvI) (ID: `ozRzbNXoUt0P1DvI`)
+
+4. **`lapsed_winback_workflow.json` (Phase 7)**:
+   - **Trigger:** Every Thursday at 11:00 AM West Africa Time (`Africa/Lagos`).
+   - **Endpoint:** `GET /api/reminders/pending/` (processes `lapsed_7d`, `lapsed_30d`, and `lapsed_60d` queues).
+   - **Action:** Multi-stage win-back messages based on days since expiration; advances lapsed stages atomically via `POST /api/reminders/mark-sent/`.
+   - **Live Railway Canvas:** [https://n8n-production-d5bb.up.railway.app/workflow/Ysn802Jb9S2YZiss](https://n8n-production-d5bb.up.railway.app/workflow/Ysn802Jb9S2YZiss) (ID: `Ysn802Jb9S2YZiss`)
 
 ---
 
 ## 1. Live Workflows on Railway n8n
 
-Both workflows have been provisioned and inserted directly into your Railway n8n workspace:
+All 4 production workflows are live and provisioned directly into your Railway n8n workspace:
 1. **3-Day Expiry Reminders:** [https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL](https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL)
 2. **Daily Owner Summary Report:** [https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF](https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF)
+3. **Inactive Member Rescue (14d):** [https://n8n-production-d5bb.up.railway.app/workflow/ozRzbNXoUt0P1DvI](https://n8n-production-d5bb.up.railway.app/workflow/ozRzbNXoUt0P1DvI)
+4. **Lapsed Member Win-Back (7d/30d/60d):** [https://n8n-production-d5bb.up.railway.app/workflow/Ysn802Jb9S2YZiss](https://n8n-production-d5bb.up.railway.app/workflow/Ysn802Jb9S2YZiss)
+
 
 ---
 

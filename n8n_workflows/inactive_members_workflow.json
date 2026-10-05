@@ -1,0 +1,262 @@
+{
+  "name": "Abuja Gym — Inactive Member Rescue (14-Day Absence)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-inactive",
+      "name": "Schedule Mondays 10AM WAT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $vars.API_BASE_URL || 'https://gym-api.up.railway.app' }}/api/reminders/pending/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Token {{ $vars.API_TOKEN || '6b0a703984803148e8c5ae42b621200ccfb44ea0' }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "retry": {
+            "retry": {
+              "maxTries": 3,
+              "waitBetweenTries": 5000
+            }
+          }
+        }
+      },
+      "id": "http-fetch-pending",
+      "name": "Fetch Pending Reminders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const data = $input.item.json;\nconst list = (data.categories && data.categories.inactive_14d) || [];\nreturn list.map(item => ({ json: item }));"
+      },
+      "id": "code-extract-inactive",
+      "name": "Extract Inactive Members",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "split-batch-inactive",
+      "name": "Process One by One",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const item = $input.item.json;\n\nfunction toE164(phone) {\n  if (!phone) return '';\n  let digits = String(phone).replace(/\\D/g, '');\n  if (digits.startsWith('0') && digits.length === 11) {\n    digits = '234' + digits.slice(1);\n  }\n  return 'whatsapp:+' + digits;\n}\n\nconst rawPhone = item.phone_number || '';\nconst formattedPhone = toE164(rawPhone);\nconst memberName = item.member_name || 'Valued Member';\nconst planName = item.plan_name || 'Gym Pass';\nconst daysCount = item.days_count || 14;\n\nconst fallbackMsg = `Hi ${memberName}! 🏋️ We noticed you have not been on the gym floor in ${daysCount} days. Your ${planName} pass is active—do not let your fitness investment go to waste! Even a quick 30-minute workout today gets your momentum back. See you soon! 💪`;\nconst messageBody = item.prepared_message || fallbackMsg;\n\nreturn {\n  json: {\n    member_id: item.member_id || item.id,\n    member_name: memberName,\n    raw_phone: rawPhone,\n    whatsapp_to: formattedPhone,\n    days_count: daysCount,\n    message_body: messageBody\n  }\n};"
+      },
+      "id": "code-sanitize-inactive",
+      "name": "Sanitize Phone & Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "from": "={{ $vars.TWILIO_WHATSAPP_SENDER || 'whatsapp:+14155238886' }}",
+        "to": "={{ $json.whatsapp_to }}",
+        "message": "={{ $json.message_body }}"
+      },
+      "id": "twilio-send-inactive",
+      "name": "Send WhatsApp via Twilio",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        300
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "twilio_account",
+          "name": "Twilio Account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.API_BASE_URL || 'https://gym-api.up.railway.app' }}/api/reminders/mark-sent/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Token {{ $vars.API_TOKEN || '6b0a703984803148e8c5ae42b621200ccfb44ea0' }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ category: 'inactive_14d', member_ids: [$('Sanitize Phone & Message').item.json.member_id] }) }}"
+      },
+      "id": "http-mark-sent-inactive",
+      "name": "Mark Inactive Reminder Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 1.5,
+        "unit": "seconds"
+      },
+      "id": "wait-inactive-pacer",
+      "name": "1.5s Rate Limit Pacer",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1780,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Mondays 10AM WAT": {
+      "main": [
+        [
+          {
+            "node": "Fetch Pending Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Pending Reminders": {
+      "main": [
+        [
+          {
+            "node": "Extract Inactive Members",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Inactive Members": {
+      "main": [
+        [
+          {
+            "node": "Process One by One",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process One by One": {
+      "main": [
+        [
+          {
+            "node": "Sanitize Phone & Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitize Phone & Message": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp via Twilio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp via Twilio": {
+      "main": [
+        [
+          {
+            "node": "Mark Inactive Reminder Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Inactive Reminder Sent": {
+      "main": [
+        [
+          {
+            "node": "1.5s Rate Limit Pacer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1.5s Rate Limit Pacer": {
+      "main": [
+        [
+          {
+            "node": "Process One by One",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Lagos",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  }
+}

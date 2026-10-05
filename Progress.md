@@ -13,18 +13,21 @@ Living document tracking what's actually been done, current state, and decisions
 
 ## Current Status
 
-**Phase:** 6 — n8n Automation: Daily Owner Report (COMPLETED ✅ 🚀)
+**Phase:** 7 — Retention & Win-Back Automation Workflows (Option B Modular) (COMPLETED ✅ 🚀)
 **Last updated:** 2026-10-05
 
-Phases 0 through 6 are 100% complete and fully verified:
-- Core MVP and Phase 5 Retention Desk & Automated Reminders active.
-- Phase 6 Daily Owner Summary Report active:
-  - Backend enhanced with `?date=yesterday` and custom dates in `DailySummaryView`, providing full 24-hour cycle reporting (00:00 to 23:59) so late-night gym sessions and renewals are captured with 100% fidelity.
-  - Automated n8n Morning Executive Briefing workflow (`daily_owner_summary_workflow.json` / ID `8spZAMbk8eOlWJIF`) provisioned directly in Railway n8n workspace, scheduled for 07:00 AM WAT, delivering Naira-formatted cards (`₦`) to the Owner's WhatsApp with Twilio error shielding.
-- All 31 backend tests passing with zero errors.
-- The next milestone is Phase 7: Flutterwave Payment Gateway Integration.
+All 4 production automation workflows are 100% complete, fully verified, and provisioned directly into the live Railway n8n workspace:
+1. **3-Day Expiry Reminders** (Daily 08:00 AM WAT)
+2. **Daily Owner Summary Report** (Daily 07:00 AM WAT, full 24h wrap-up)
+3. **Inactive Pass Holders Rescue (14-Day Absence)** (Mondays 10:00 AM WAT)
+4. **Lapsed Member Win-Back Pipeline (7d, 30d, 60d)** (Thursdays 11:00 AM WAT)
+
+Flutterwave online payment gateway was officially removed per user decision in favor of counter cash, physical POS, and direct bank transfers (0% gateway fees). All 31 backend tests passing with zero errors.
+
+The system is now ready for **Phase 8: Deployment & Production Launch** (VPS, Nginx, Gunicorn, Domain, and HTTPS).
 
 ## Decisions Locked In
+
 
 
 - Single gym client, not a multi-gym SaaS product
@@ -45,6 +48,11 @@ Phases 0 through 6 are 100% complete and fully verified:
 ## Session Log
 
 ### 2026-10-05
+- Completed Phase 7 (Retention & Win-Back Automation Workflows — Option B Modular):
+  - Removed Phase 7 Flutterwave integration per user directive to focus on the physical gym counter payments model (zero fees).
+  - Built and provisioned Workflow 3: `inactive_members_workflow.json` (ID `ozRzbNXoUt0P1DvI`) into Railway n8n for Monday 10:00 AM WAT rescue of active pass holders absent for 14+ days.
+  - Built and provisioned Workflow 4: `lapsed_winback_workflow.json` (ID `Ysn802Jb9S2YZiss`) into Railway n8n for Thursday 11:00 AM WAT multi-stage win-back of 7-day, 30-day, and 60-day lapsed members.
+  - Both workflows feature atomic item-by-item state progression (`POST /api/reminders/mark-sent/`), Twilio error shielding (`onError: continueRegularOutput`), and 1.5s rate-limit pacers.
 - Completed Phase 6 (Daily Owner Summary Report):
   - Upgraded `DailySummaryView` in `gym_backend/dashboard/views.py` to support `?date=yesterday` and custom dates, capturing the complete 00:00 to 23:59 operating day with formatted dates and zero-loss of evening peak hours.
   - Added backend unit tests (`test_daily_summary_endpoint_owner_and_yesterday_query`) verifying RBAC and yesterday queries; test suite passing at 31/31 tests.
@@ -52,6 +60,7 @@ Phases 0 through 6 are 100% complete and fully verified:
   - Formatted WhatsApp briefing card with Nigerian Naira (`₦`), total check-ins, unique athletes, new registrations, expiries, and safe rest-day handling.
   - Enabled Twilio fault isolation with `onError: continueRegularOutput`.
   - Updated integration runbook `n8n_workflows/README.md` and [Tasks.md](file:///c:/Users/User/OneDrive/Desktop/Gym%20managment%20system/Tasks.md).
+
 
 ### 2026-10-03
 - Completed Phase 5 Automation Setup & Risk Hardening:
