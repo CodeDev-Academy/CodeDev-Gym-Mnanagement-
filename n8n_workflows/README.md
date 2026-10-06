@@ -9,25 +9,25 @@ This directory contains the production-grade automation workflows for the **Gym 
 1. **`expiry_reminders_workflow.json` (Phase 5)**:
    - **Trigger:** Daily at 08:00 AM West Africa Time (`Africa/Lagos`).
    - **Endpoint:** `GET /api/subscriptions/expiring-soon/?days=3`
-   - **Action:** Sends 3-day pre-expiry warning to athlete; marks subscription reminded.
+   - **Action:** Sends 3-day pre-expiry warning to athlete via Telegram (`Dr ai_bot`); marks subscription reminded.
    - **Live Railway Canvas:** [https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL](https://n8n-production-d5bb.up.railway.app/workflow/dcR81UrElWSeIJjL) (ID: `dcR81UrElWSeIJjL`)
 
 2. **`daily_owner_summary_workflow.json` (Phase 6)**:
    - **Trigger:** Daily at 07:00 AM West Africa Time (`Africa/Lagos`).
    - **Endpoint:** `GET /api/dashboard/daily-summary/?date=yesterday`
-   - **Action:** Full 24h wrap-up (revenue `₦`, check-ins, unique athletes, new enrollees, expiries) sent to Owner's WhatsApp.
+   - **Action:** Full 24h wrap-up (revenue `₦`, check-ins, unique athletes, new enrollees, expiries) delivered via Telegram to Owner (`chatId: 5433612668`).
    - **Live Railway Canvas:** [https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF](https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF) (ID: `8spZAMbk8eOlWJIF`)
 
 3. **`inactive_members_workflow.json` (Phase 7)**:
    - **Trigger:** Every Monday at 10:00 AM West Africa Time (`Africa/Lagos`).
    - **Endpoint:** `GET /api/reminders/pending/` (extracts `inactive_14d` queue).
-   - **Action:** Re-engages active pass holders absent for 14+ days; marks cooldown via `POST /api/reminders/mark-sent/`.
+   - **Action:** Re-engages active pass holders absent for 14+ days via Telegram; marks cooldown via `POST /api/reminders/mark-sent/`.
    - **Live Railway Canvas:** [https://n8n-production-d5bb.up.railway.app/workflow/ozRzbNXoUt0P1DvI](https://n8n-production-d5bb.up.railway.app/workflow/ozRzbNXoUt0P1DvI) (ID: `ozRzbNXoUt0P1DvI`)
 
 4. **`lapsed_winback_workflow.json` (Phase 7)**:
    - **Trigger:** Every Thursday at 11:00 AM West Africa Time (`Africa/Lagos`).
    - **Endpoint:** `GET /api/reminders/pending/` (processes `lapsed_7d`, `lapsed_30d`, and `lapsed_60d` queues).
-   - **Action:** Multi-stage win-back messages based on days since expiration; advances lapsed stages atomically via `POST /api/reminders/mark-sent/`.
+   - **Action:** Multi-stage win-back messages based on days since expiration via Telegram; advances lapsed stages atomically via `POST /api/reminders/mark-sent/`.
    - **Live Railway Canvas:** [https://n8n-production-d5bb.up.railway.app/workflow/Ysn802Jb9S2YZiss](https://n8n-production-d5bb.up.railway.app/workflow/Ysn802Jb9S2YZiss) (ID: `Ysn802Jb9S2YZiss`)
 
 5. **`Shared Error Notification Handler` (Universal Failure Trigger)**:

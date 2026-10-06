@@ -101,23 +101,27 @@
     },
     {
       "parameters": {
-        "operation": "send",
-        "from": "={{ $vars.TWILIO_WHATSAPP_SENDER || 'whatsapp:+17372212163' }}",
-        "to": "={{ $json.whatsapp_to }}",
-        "message": "={{ $json.message_body }}"
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "5433612668",
+        "text": "={{ $json.message_body }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "appendAttribution": false
+        }
       },
-      "id": "twilio-send-inactive",
-      "name": "Send WhatsApp via Twilio",
-      "type": "n8n-nodes-base.twilio",
-      "typeVersion": 1,
+      "id": "telegram-send-inactive",
+      "name": "Send Telegram Inactive Rescue",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
       "position": [
         1340,
         300
       ],
       "credentials": {
-        "twilioApi": {
-          "id": "twilio_account",
-          "name": "Twilio Account"
+        "telegramApi": {
+          "id": "A3rsRd8wXZFt93qG",
+          "name": "Dr ai_bot"
         }
       },
       "onError": "continueRegularOutput"
@@ -212,14 +216,14 @@
       "main": [
         [
           {
-            "node": "Send WhatsApp via Twilio",
+            "node": "Send Telegram Inactive Rescue",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Send WhatsApp via Twilio": {
+    "Send Telegram Inactive Rescue": {
       "main": [
         [
           {

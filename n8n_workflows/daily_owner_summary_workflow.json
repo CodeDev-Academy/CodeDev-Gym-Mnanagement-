@@ -73,23 +73,27 @@
     },
     {
       "parameters": {
-        "operation": "send",
-        "from": "={{ $vars.TWILIO_WHATSAPP_SENDER || 'whatsapp:+17372212163' }}",
-        "to": "={{ $json.owner_phone }}",
-        "message": "={{ $json.message_body }}"
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "5433612668",
+        "text": "={{ $json.message_body }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "appendAttribution": false
+        }
       },
-      "id": "twilio-send-owner",
-      "name": "Send WhatsApp to Owner",
-      "type": "n8n-nodes-base.twilio",
-      "typeVersion": 1,
+      "id": "telegram-send-owner",
+      "name": "Send Telegram Report to Owner",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
       "position": [
         940,
         300
       ],
       "credentials": {
-        "twilioApi": {
-          "id": "twilio_account",
-          "name": "Twilio Account"
+        "telegramApi": {
+          "id": "A3rsRd8wXZFt93qG",
+          "name": "Dr ai_bot"
         }
       },
       "onError": "continueRegularOutput"
@@ -122,7 +126,7 @@
       "main": [
         [
           {
-            "node": "Send WhatsApp to Owner",
+            "node": "Send Telegram Report to Owner",
             "type": "main",
             "index": 0
           }
