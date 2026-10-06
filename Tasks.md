@@ -85,11 +85,15 @@ Checklist-style breakdown by phase. Work top to bottom — each phase should be 
 - [ ] Multi-location support — only if the gym expands to a second branch
 
 
-## Deployment Tasks (parallel, once Phase 4 is stable)
+## Deployment Tasks — Cloud Architecture (Railway + Vercel)
 
-- [ ] Provision VPS (DigitalOcean or similar)
-- [ ] Set up Nginx + Gunicorn for Django
-- [ ] Set up MySQL on VPS (or managed DB)
-- [ ] Build & deploy React static files
-- [ ] Set up n8n (Docker) on VPS or separate instance
-- [ ] Configure HTTPS (Let's Encrypt)
+- [x] Backend Containerization & Production Server: Add `gunicorn`, `whitenoise`, `dj-database-url`, `psycopg2-binary`
+- [x] Railway Start Process: Create `Procfile` (`web: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`)
+- [x] Environment-Ready `settings.py`: `SECRET_KEY`, `DEBUG`, `DATABASE_URL`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`
+- [x] WhiteNoise Production Asset Pipeline: Configured compressed static storage
+- [x] Frontend Dynamic API Base URL: `import.meta.env.VITE_API_BASE_URL` with local fallback
+- [x] Vercel SPA Routing: Added `vercel.json` rewrite configuration for React Router
+- [x] Live Automation Workflows on Railway: 4 Telegram-integrated workflows active on Railway n8n
+- [ ] Railway Cloud Deployment: Connect GitHub repo ➔ Railway Backend service + Managed Postgres/MySQL
+- [ ] Vercel Cloud Deployment: Connect GitHub repo ➔ Vercel Frontend service (`gym_frontend`)
+- [ ] Live Sync: Set `API_BASE_URL` in Railway n8n to deployed Railway Django domain
