@@ -95,5 +95,5 @@ Checklist-style breakdown by phase. Work top to bottom — each phase should be 
 - [x] Vercel SPA Routing: Added `vercel.json` rewrite configuration for React Router
 - [x] Live Automation Workflows on Railway: 4 Telegram-integrated workflows active on Railway n8n
 - [x] Railway Cloud Deployment: Verified live at `codedev-gym-mnanagement-production.up.railway.app`
-- [ ] Vercel Cloud Deployment: Connect GitHub repo ➔ Vercel Frontend service (`gym_frontend`)
+- [x] Vercel Cloud Deployment: React + Vite frontend live on Vercel
 - [x] Live Sync: Set `API_BASE_URL` in Railway n8n to deployed Railway Django domain and activated all 4 workflows
