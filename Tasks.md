@@ -94,6 +94,6 @@ Checklist-style breakdown by phase. Work top to bottom — each phase should be 
 - [x] Frontend Dynamic API Base URL: `import.meta.env.VITE_API_BASE_URL` with local fallback
 - [x] Vercel SPA Routing: Added `vercel.json` rewrite configuration for React Router
 - [x] Live Automation Workflows on Railway: 4 Telegram-integrated workflows active on Railway n8n
-- [ ] Railway Cloud Deployment: Connect GitHub repo ➔ Railway Backend service + Managed Postgres/MySQL
+- [x] Railway Cloud Deployment: Verified live at `codedev-gym-mnanagement-production.up.railway.app`
 - [ ] Vercel Cloud Deployment: Connect GitHub repo ➔ Vercel Frontend service (`gym_frontend`)
-- [ ] Live Sync: Set `API_BASE_URL` in Railway n8n to deployed Railway Django domain
+- [x] Live Sync: Set `API_BASE_URL` in Railway n8n to deployed Railway Django domain and activated all 4 workflows
