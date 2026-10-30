@@ -40,3 +40,4 @@ class Command(BaseCommand):
                 f"Successfully marked {updated} overdue subscription(s) as 'expired' (as of {today})."
             )
         )
+

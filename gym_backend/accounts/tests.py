@@ -47,7 +47,8 @@ class AccountsProfileTests(TestCase):
         self.assertEqual(self.user.phone_number, '+2348012345678')
         self.assertEqual(self.user.bio, 'Head Fitness Coach & Gym Director')
 
-    def test_change_password_success_and_reauth(self):
+    def test_change_password_success_and_rotates_token(self):
+        old_token_key = self.token.key
         url = reverse('change_password')
         payload = {
             'old_password': 'InitialPassword123!',
@@ -57,8 +58,15 @@ class AccountsProfileTests(TestCase):
         response = self.client.post(url, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('detail', response.data)
+        self.assertIn('token', response.data)
 
-        # Test login with new password
+        # SEC-02: Old token must be invalidated, new token returned
+        self.assertNotEqual(response.data['token'], old_token_key)
+        self.assertFalse(Token.objects.filter(key=old_token_key).exists())
+        self.assertTrue(Token.objects.filter(key=response.data['token']).exists())
+
+        # Test login with new password (clear stale credentials)
+        self.client.credentials()
         login_url = reverse('login')
         login_resp = self.client.post(login_url, {
             'username': 'testowner',
@@ -153,7 +161,8 @@ class StaffManagementTests(TestCase):
         self.assertEqual(created_user.role, 'FRONT_DESK')
         self.assertTrue(created_user.check_password('NewStaffPassword123!'))
 
-    def test_owner_can_reset_staff_password(self):
+    def test_owner_can_reset_staff_password_revokes_token(self):
+        old_staff_token = self.staff_token.key
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.owner_token.key}')
         url = reverse('staff_reset_password', kwargs={'pk': self.staff.pk})
         payload = {
@@ -163,13 +172,17 @@ class StaffManagementTests(TestCase):
         response = self.client.post(url, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Verify staff can login with new password
+        # SEC-02: Old token must be destroyed immediately
+        self.assertFalse(Token.objects.filter(key=old_staff_token).exists())
+
+        # Verify staff can login with new password and receive a fresh token
         login_url = reverse('login')
         login_resp = self.client.post(login_url, {
             'username': 'receptionist1',
             'password': 'UpdatedStaffPass456#',
         }, format='json')
         self.assertEqual(login_resp.status_code, status.HTTP_200_OK)
+        self.assertIn('token', login_resp.data)
 
     def test_cannot_reset_owner_password_via_staff_endpoint(self):
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.owner_token.key}')
@@ -182,7 +195,8 @@ class StaffManagementTests(TestCase):
         response = self.client.post(url, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_owner_can_toggle_staff_status(self):
+    def test_owner_can_toggle_staff_status_and_revokes_token(self):
+        old_staff_token = self.staff_token.key
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.owner_token.key}')
         url = reverse('staff_toggle_status', kwargs={'pk': self.staff.pk})
 
@@ -191,6 +205,8 @@ class StaffManagementTests(TestCase):
         self.assertEqual(resp1.status_code, status.HTTP_200_OK)
         self.self_staff = User.objects.get(pk=self.staff.pk)
         self.assertFalse(self.self_staff.is_active)
+        # Token revoked
+        self.assertFalse(Token.objects.filter(key=old_staff_token).exists())
 
         # Deactivated staff cannot login
         login_url = reverse('login')
@@ -232,5 +248,3 @@ class SetupAutomationBotCommandTests(TestCase):
         out2 = StringIO()
         call_command('setup_automation_bot', stdout=out2)
         self.assertIn('Retrieved existing token', out2.getvalue())
-
-

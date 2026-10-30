@@ -4,6 +4,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 from .models import User
 from .permissions import IsOwnerUser
@@ -18,9 +19,9 @@ from .serializers import (
 )
 
 
-
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle]
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -70,7 +71,13 @@ class ChangePasswordView(APIView):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'detail': 'Password changed successfully.'}, status=status.HTTP_200_OK)
+        # SEC-02 Fix: Invalidate old token and issue a fresh one
+        Token.objects.filter(user=request.user).delete()
+        new_token = Token.objects.create(user=request.user)
+        return Response({
+            'detail': 'Password changed successfully.',
+            'token': new_token.key,
+        }, status=status.HTTP_200_OK)
 
 
 class StaffListView(APIView):
@@ -97,8 +104,10 @@ class StaffResetPasswordView(APIView):
         serializer.is_valid(raise_exception=True)
         user.set_password(serializer.validated_data['new_password'])
         user.save()
+        # SEC-02 Fix: Invalidate any active tokens held by the staff member immediately
+        Token.objects.filter(user=user).delete()
         return Response(
-            {'detail': f"Password for staff member '{user.username}' has been reset successfully."},
+            {'detail': f"Password for staff member '{user.username}' has been reset successfully. Active sessions revoked."},
             status=status.HTTP_200_OK
         )
 
@@ -111,6 +120,9 @@ class StaffToggleStatusView(APIView):
         user.is_active = not user.is_active
         user.save()
         action = 'activated' if user.is_active else 'deactivated'
+        if not user.is_active:
+            # Revoke tokens immediately if account was deactivated
+            Token.objects.filter(user=user).delete()
         return Response(
             {
                 'detail': f"Staff member '{user.username}' has been {action}.",
@@ -118,4 +130,3 @@ class StaffToggleStatusView(APIView):
             },
             status=status.HTTP_200_OK
         )
-

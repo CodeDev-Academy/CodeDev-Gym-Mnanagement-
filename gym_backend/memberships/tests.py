@@ -1,15 +1,31 @@
 from datetime import timedelta
 from decimal import Decimal
+from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.db.models import ProtectedError
 from django.utils import timezone
-from django.test import TestCase
+from rest_framework import status
+from rest_framework.test import APITestCase
 
 from members.models import Member
 from memberships.models import MembershipPlan, Subscription
 
-class MembershipTestCase(TestCase):
+User = get_user_model()
+
+
+class MembershipTestCase(APITestCase):
     def setUp(self):
+        self.owner = User.objects.create_user(
+            username='owner_sub',
+            password='testpassword123',
+            role='OWNER',
+        )
+        self.receptionist = User.objects.create_user(
+            username='receptionist_sub',
+            password='testpassword123',
+            role='FRONT_DESK',
+        )
+
         self.plan = MembershipPlan.objects.create(
             name='Standard Plan',
             price=Decimal('10000.00'),
@@ -63,3 +79,49 @@ class MembershipTestCase(TestCase):
         # Deleting member should raise ProtectedError
         with self.assertRaises(ProtectedError):
             self.member.delete()
+
+    def test_front_desk_cannot_delete_or_modify_subscription(self):
+        today = timezone.localdate()
+        sub = Subscription.objects.create(
+            member=self.member,
+            plan=self.plan,
+            start_date=today,
+            end_date=today + timedelta(days=30),
+            status='active',
+        )
+
+        self.client.force_authenticate(user=self.receptionist)
+
+        # Attempt DELETE
+        del_resp = self.client.delete(f'/api/subscriptions/{sub.id}/')
+        self.assertEqual(del_resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Subscription.objects.filter(id=sub.id).exists())
+
+        # Attempt PATCH
+        patch_resp = self.client.patch(f'/api/subscriptions/{sub.id}/', {'status': 'cancelled'})
+        self.assertEqual(patch_resp.status_code, status.HTTP_403_FORBIDDEN)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'active')
+
+    def test_owner_can_modify_and_delete_unbilled_subscription(self):
+        today = timezone.localdate()
+        sub = Subscription.objects.create(
+            member=self.member,
+            plan=self.plan,
+            start_date=today,
+            end_date=today + timedelta(days=30),
+            status='active',
+        )
+
+        self.client.force_authenticate(user=self.owner)
+
+        # Owner can PATCH
+        patch_resp = self.client.patch(f'/api/subscriptions/{sub.id}/', {'status': 'cancelled'})
+        self.assertEqual(patch_resp.status_code, status.HTTP_200_OK)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'cancelled')
+
+        # Owner can DELETE unbilled subscription
+        del_resp = self.client.delete(f'/api/subscriptions/{sub.id}/')
+        self.assertEqual(del_resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Subscription.objects.filter(id=sub.id).exists())

@@ -50,6 +50,12 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     ordering_fields = ['start_date', 'end_date', 'status']
     ordering = ['-end_date']
 
+    def get_permissions(self):
+        # SEC-01 Fix: Only Owner can delete or modify existing subscriptions
+        if self.action in ['destroy', 'update', 'partial_update']:
+            return [permissions.IsAuthenticated(), IsOwnerUser()]
+        return [permissions.IsAuthenticated()]
+
     def get_serializer_class(self):
         if self.action == 'create':
             return AssignPlanSerializer

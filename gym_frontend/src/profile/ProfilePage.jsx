@@ -204,6 +204,9 @@ export const ProfilePage = () => {
         new_password: passwordForm.new_password,
         confirm_password: passwordForm.confirm_password,
       });
+      if (res.token) {
+        localStorage.setItem('gym_token', res.token);
+      }
       setPasswordSuccess(res.detail || 'Password changed successfully.');
       setPasswordForm({
         old_password: '',
