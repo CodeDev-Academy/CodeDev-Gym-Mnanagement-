@@ -1,5 +1,6 @@
-from rest_framework import serializers
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils import timezone
+from rest_framework import serializers
 from .models import Member
 from .utils import normalize_phone_number, validate_e164_phone
 
@@ -30,7 +31,6 @@ class MemberSerializer(serializers.ModelSerializer):
         return normalized
 
 
-
 class MemberDetailSerializer(serializers.ModelSerializer):
     active_subscription = serializers.SerializerMethodField()
 
@@ -49,15 +49,24 @@ class MemberDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
     def get_active_subscription(self, obj):
-        sub = obj.subscriptions.filter(status='active').order_by('-end_date').first()
+        today = timezone.localdate()
+        sub = (
+            obj.subscriptions.filter(status='active', end_date__gte=today)
+            .select_related('plan')
+            .order_by('-end_date')
+            .first()
+        )
         if not sub:
             return None
         return {
             'id': sub.id,
             'plan_id': sub.plan.id,
             'plan_name': sub.plan.name,
+            'plan_price': sub.plan.price,
+            'plan_duration': sub.plan.duration_days,
             'start_date': sub.start_date,
             'end_date': sub.end_date,
             'status': sub.status,
             'reminder_sent': sub.reminder_sent,
+            'has_payment': sub.payments.exists(),
         }

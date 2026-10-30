@@ -30,6 +30,7 @@ export const DashboardPage = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [activeFeedTab, setActiveFeedTab] = useState('checkins');
+  const [gaugeTab, setGaugeTab] = useState('floor'); // 'floor' | 'members' | 'revenue' | 'plans'
 
   // Modal state for direct renewal
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -96,6 +97,7 @@ export const DashboardPage = () => {
       plan_price: sub.plan_price,
       plan_duration: sub.plan_duration,
       end_date: sub.end_date,
+      has_payment: true,
     });
     setIsPaymentModalOpen(true);
   };
@@ -112,16 +114,78 @@ export const DashboardPage = () => {
     active_members: 0,
     today_checkins: 0,
     today_unique_checkins: 0,
+    rhythm: { morning: 0, afternoon: 0, evening: 0 },
     month_revenue: 0,
     today_revenue: 0,
     expiring_this_week_count: 0,
   };
 
-  // Calculate capacity percentage for the speedometer
-  const capacityPct = Math.min(
-    100,
-    Math.max(15, Math.round(((metrics.today_unique_checkins || 1) / Math.max(metrics.active_members || 1, 5)) * 100))
-  );
+  const renderRhythmDots = (count, colorClass = 'r-active') => {
+    const activeCount = count === 0 ? 0 : Math.min(5, Math.max(1, Math.ceil(count / 2)));
+    return Array.from({ length: 5 }).map((_, idx) => (
+      <span
+        key={idx}
+        className={`r-dot ${idx < activeCount ? colorClass : 'r-dim'}`}
+        title={`${count} check-ins logged`}
+      />
+    ));
+  };
+
+  // Dynamic Gauge calculation depending on active tab
+  const getGaugeData = () => {
+    switch (gaugeTab) {
+      case 'members': {
+        const pct = metrics.total_members > 0
+          ? Math.min(100, Math.round((metrics.active_members / metrics.total_members) * 100))
+          : 0;
+        return {
+          label: 'Active Base',
+          pct,
+          title: 'Membership Retention & Health',
+          sub: `${metrics.active_members} active of ${metrics.total_members} total registered`,
+        };
+      }
+      case 'revenue': {
+        const target = Math.max(metrics.active_members * 15000, 100000);
+        const currentRev = metrics.month_revenue || 0;
+        const pct = Math.min(100, Math.round((currentRev / target) * 100));
+        return {
+          label: 'Target Pace',
+          pct: user?.role === 'OWNER' ? pct : 100,
+          title: user?.role === 'OWNER' ? 'Monthly Target Pace' : 'Front Desk Ready',
+          sub: user?.role === 'OWNER'
+            ? `${formatNaira(currentRev)} of estimated ${formatNaira(target)} monthly target`
+            : 'Desk operations active & synchronized',
+        };
+      }
+      case 'plans': {
+        const expiring = metrics.expiring_this_week_count || 0;
+        const active = metrics.active_members || 1;
+        const healthyPct = Math.max(0, Math.min(100, 100 - Math.round((expiring / active) * 100)));
+        return {
+          label: 'Plan Stability',
+          pct: healthyPct,
+          title: 'Subscription Retention Index',
+          sub: expiring > 0 ? `${expiring} subscriptions due to expire this week` : 'All active subscriptions in good standing',
+        };
+      }
+      case 'floor':
+      default: {
+        const floorCap = Math.max(metrics.active_members || 1, 10);
+        const pct = metrics.today_unique_checkins > 0
+          ? Math.min(100, Math.round((metrics.today_unique_checkins / floorCap) * 100))
+          : 0;
+        return {
+          label: 'Flow Pace',
+          pct,
+          title: 'Balanced Energy & Floor State',
+          sub: `${metrics.today_unique_checkins} unique visitors on floor today`,
+        };
+      }
+    }
+  };
+
+  const gaugeData = getGaugeData();
 
   return (
     <div className="cinematic-dashboard">
@@ -223,31 +287,19 @@ export const DashboardPage = () => {
               <div className="rhythm-row">
                 <span className="rhythm-label">Morning</span>
                 <div className="rhythm-dots">
-                  <span className="r-dot r-active" />
-                  <span className="r-dot r-active" />
-                  <span className="r-dot r-active" />
-                  <span className="r-dot r-dim" />
-                  <span className="r-dot r-dim" />
+                  {renderRhythmDots(metrics.rhythm?.morning || 0, 'r-active')}
                 </div>
               </div>
               <div className="rhythm-row">
                 <span className="rhythm-label">Afternoon</span>
                 <div className="rhythm-dots">
-                  <span className="r-dot r-active-gold" />
-                  <span className="r-dot r-active-gold" />
-                  <span className="r-dot r-active-gold" />
-                  <span className="r-dot r-active-gold" />
-                  <span className="r-dot r-dim" />
+                  {renderRhythmDots(metrics.rhythm?.afternoon || 0, 'r-active-gold')}
                 </div>
               </div>
               <div className="rhythm-row">
                 <span className="rhythm-label">Evening</span>
                 <div className="rhythm-dots">
-                  <span className="r-dot r-active" />
-                  <span className="r-dot r-active" />
-                  <span className="r-dot r-dim" />
-                  <span className="r-dot r-dim" />
-                  <span className="r-dot r-dim" />
+                  {renderRhythmDots(metrics.rhythm?.evening || 0, 'r-active')}
                 </div>
               </div>
             </div>
@@ -386,21 +438,45 @@ export const DashboardPage = () => {
           )}
         </div>
 
-        {/* Speedometer Radial Gauge Widget (Matching Reference) */}
+        {/* Speedometer Radial Gauge Widget */}
         <div className="speedometer-widget-card">
           <div className="gauge-icon-pill-nav">
-            <span className="gauge-tab active" title="Floor Load">
+            <button
+              type="button"
+              className={`gauge-tab ${gaugeTab === 'floor' ? 'active' : ''}`}
+              onClick={() => setGaugeTab('floor')}
+              title="Gym Floor Load"
+              aria-label="Floor Load"
+            >
               <CheckInIcon size={14} />
-            </span>
-            <span className="gauge-tab" title="Members Pace">
+            </button>
+            <button
+              type="button"
+              className={`gauge-tab ${gaugeTab === 'members' ? 'active' : ''}`}
+              onClick={() => setGaugeTab('members')}
+              title="Active Members Base"
+              aria-label="Members Pace"
+            >
               <UsersIcon size={14} />
-            </span>
-            <span className="gauge-tab" title="Target Revenue">
+            </button>
+            <button
+              type="button"
+              className={`gauge-tab ${gaugeTab === 'revenue' ? 'active' : ''}`}
+              onClick={() => setGaugeTab('revenue')}
+              title={user?.role === 'OWNER' ? 'Revenue Pace' : 'Desk Shift State'}
+              aria-label="Revenue Pace"
+            >
               <CreditCardIcon size={14} />
-            </span>
-            <span className="gauge-tab" title="Plans Breakdown">
+            </button>
+            <button
+              type="button"
+              className={`gauge-tab ${gaugeTab === 'plans' ? 'active' : ''}`}
+              onClick={() => setGaugeTab('plans')}
+              title="Plan Stability & Expirations"
+              aria-label="Plans Breakdown"
+            >
               <LayersIcon size={14} />
-            </span>
+            </button>
           </div>
 
           <div className="gauge-visual-container">
@@ -429,7 +505,7 @@ export const DashboardPage = () => {
                   fill="none"
                   stroke="url(#speedoGradient)"
                   strokeWidth="14"
-                  strokeDasharray={`${(capacityPct / 100) * 235}, 250`}
+                  strokeDasharray={`${(gaugeData.pct / 100) * 235}, 250`}
                   strokeLinecap="round"
                 />
                 <defs>
@@ -443,8 +519,8 @@ export const DashboardPage = () => {
 
               {/* Gauge Center Metric */}
               <div className="gauge-center-content">
-                <span className="gauge-speed-label">Flow Pace</span>
-                <span className="gauge-percent-text">{capacityPct}%</span>
+                <span className="gauge-speed-label">{gaugeData.label}</span>
+                <span className="gauge-percent-text">{gaugeData.pct}%</span>
               </div>
             </div>
 
@@ -469,8 +545,8 @@ export const DashboardPage = () => {
             </div>
 
             <div className="gauge-status-desc">
-              <span className="gauge-status-title">Balanced Energy & Floor State</span>
-              <span className="gauge-status-sub">Overall Gym Floor Stability Index</span>
+              <span className="gauge-status-title">{gaugeData.title}</span>
+              <span className="gauge-status-sub">{gaugeData.sub}</span>
             </div>
           </div>
         </div>

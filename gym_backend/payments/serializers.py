@@ -1,4 +1,5 @@
 from datetime import timedelta
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 from memberships.models import Subscription
@@ -56,27 +57,38 @@ class RecordPaymentSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         recorded_by = request.user if request and request.user.is_authenticated else None
 
-        payment = Payment.objects.create(
-            recorded_by=recorded_by,
-            **validated_data
-        )
+        with transaction.atomic():
+            payment = Payment.objects.create(
+                recorded_by=recorded_by,
+                **validated_data
+            )
 
-        subscription = payment.subscription
+            subscription = Subscription.objects.select_for_update().get(id=payment.subscription_id)
 
-        if is_renewal:
-            today = timezone.localdate()
-            duration_days = subscription.plan.duration_days
+            if is_renewal:
+                today = timezone.localdate()
+                duration_days = subscription.plan.duration_days
 
-            if subscription.end_date >= today:
-                new_end_date = subscription.end_date + timedelta(days=duration_days)
-            else:
-                new_end_date = today + timedelta(days=duration_days)
+                if subscription.end_date >= today:
+                    new_end_date = subscription.end_date + timedelta(days=duration_days)
+                else:
+                    new_end_date = today + timedelta(days=duration_days)
 
-            subscription.end_date = new_end_date
-            subscription.status = 'active'
-            subscription.reminder_sent = False
-            subscription.reminder_sent_at = None
-            subscription.save()
+                subscription.end_date = new_end_date
+                subscription.status = 'active'
+                subscription.reminder_sent = False
+                subscription.reminder_sent_at = None
+                # Reset lapsed stages so future win-backs trigger if member lapses again
+                subscription.lapsed_stage = 0
+                subscription.last_lapsed_reminder_at = None
+                subscription.save(update_fields=[
+                    'end_date',
+                    'status',
+                    'reminder_sent',
+                    'reminder_sent_at',
+                    'lapsed_stage',
+                    'last_lapsed_reminder_at',
+                ])
 
         return payment
 

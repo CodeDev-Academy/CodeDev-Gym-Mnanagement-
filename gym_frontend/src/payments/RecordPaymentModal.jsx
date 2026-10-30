@@ -12,7 +12,9 @@ export const RecordPaymentModal = ({ isOpen, onClose, onSuccess, member, subscri
     if (isOpen && subscription) {
       setAmount(subscription.plan_price ? Number(subscription.plan_price).toFixed(2) : '');
       setMethod('cash');
-      setIsRenewal(true);
+      // If subscription has no prior recorded payments, default to initial payment (not renewal)
+      const hasPrior = subscription.has_payment ?? true;
+      setIsRenewal(hasPrior);
       setError('');
     }
   }, [isOpen, subscription]);
@@ -131,7 +133,12 @@ export const RecordPaymentModal = ({ isOpen, onClose, onSuccess, member, subscri
                 checked={isRenewal}
                 onChange={(e) => setIsRenewal(e.target.checked)}
               />
-              <span><strong>Extend & Renew Subscription</strong> (+{subscription.plan_duration || 30} days)</span>
+              <span>
+                <strong>{isRenewal ? 'Extend & Renew Subscription' : 'Initial Subscription Fee (No extra days)'}</strong>
+                {isRenewal
+                  ? ` (+${subscription.plan_duration || 30} days)`
+                  : ' (Covers initial plan duration)'}
+              </span>
             </label>
           </div>
 
@@ -143,7 +150,7 @@ export const RecordPaymentModal = ({ isOpen, onClose, onSuccess, member, subscri
                 <span className="arrow-sep">➔</span>
                 <span className="new-date-highlight">New Expiry: <strong>{newEndDate}</strong></span>
               </div>
-              <div className="preview-subtext">Resets expiry reminder status so future notifications trigger on schedule.</div>
+              <div className="preview-subtext">Extends validity and resets reminder status for the next cycle.</div>
             </div>
           )}
 
@@ -152,7 +159,7 @@ export const RecordPaymentModal = ({ isOpen, onClose, onSuccess, member, subscri
               Cancel
             </button>
             <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? 'Recording...' : isRenewal ? 'Record Payment & Renew' : 'Record Payment Only'}
+              {submitting ? 'Recording...' : isRenewal ? 'Record Payment & Renew' : 'Record Initial Payment'}
             </button>
           </div>
         </form>

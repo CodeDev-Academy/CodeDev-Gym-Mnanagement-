@@ -25,17 +25,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-e9)f96b8x-_nbn4-$m^4=x4y=_4^l%nc16#0fl(po8f1=)(727')
+# Auto-detect development vs production default:
+# If DATABASE_URL is set (e.g. Railway / Postgres cloud), default to False for production safety.
+DEBUG = os.getenv('DEBUG', 'False' if os.getenv('DATABASE_URL') else 'True').lower() in ('true', '1')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1')
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-dev-only-secret-key-do-not-use-in-production'
+    else:
+        import secrets
+        SECRET_KEY = secrets.token_urlsafe(50)
 
 allowed_hosts_env = os.getenv('ALLOWED_HOSTS')
 if allowed_hosts_env:
     ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()]
 else:
-    ALLOWED_HOSTS = ['*']
+    ALLOWED_HOSTS = ['*'] if DEBUG else ['.railway.app', '.up.railway.app', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -183,6 +189,10 @@ MAILERS = {
     },
 }
 
+# Default primary key field type
+# https://docs.djangoproject.com/en/6.1/ref/settings/#default-auto-field
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -198,7 +208,7 @@ REST_FRAMEWORK = {
 }
 
 # CORS configuration
-CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True').lower() in ('true', '1')
+CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True' if DEBUG else 'False').lower() in ('true', '1')
 
 cors_origins_env = os.getenv('CORS_ALLOWED_ORIGINS')
 if cors_origins_env:

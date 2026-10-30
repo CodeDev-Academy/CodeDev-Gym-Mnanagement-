@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Navbar } from '../components/Navbar';
 import { getMembers } from '../api/members';
 import { getCheckIns, createCheckIn, getTodayStats } from '../api/attendance';
 
@@ -102,8 +101,6 @@ export const CheckInPage = () => {
 
   return (
     <div className="dashboard-container">
-      <Navbar />
-
       <main className="dashboard-main checkin-layout">
         <div className="page-header">
           <div>

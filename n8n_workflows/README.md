@@ -15,7 +15,7 @@ This directory contains the production-grade automation workflows for the **Gym 
 2. **`daily_owner_summary_workflow.json` (Phase 6)**:
    - **Trigger:** Daily at 07:00 AM West Africa Time (`Africa/Lagos`).
    - **Endpoint:** `GET /api/dashboard/daily-summary/?date=yesterday`
-   - **Action:** Full 24h wrap-up (revenue `₦`, check-ins, unique athletes, new enrollees, expiries) delivered via Telegram to Owner (`chatId: 5433612668`).
+   - **Action:** Full 24h wrap-up (revenue `₦`, check-ins, unique athletes, new enrollees, expiries) delivered via Telegram to Owner.
    - **Live Railway Canvas:** [https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF](https://n8n-production-d5bb.up.railway.app/workflow/8spZAMbk8eOlWJIF) (ID: `8spZAMbk8eOlWJIF`)
 
 3. **`inactive_members_workflow.json` (Phase 7)**:
@@ -32,7 +32,7 @@ This directory contains the production-grade automation workflows for the **Gym 
 
 5. **`Shared Error Notification Handler` (Universal Failure Trigger)**:
    - **Trigger:** Error Trigger (`n8n-nodes-base.errorTrigger`).
-   - **Target:** Sends instant markdown alerts to Telegram (`chatId: 5433612668`).
+   - **Target:** Sends instant markdown alerts to Telegram.
    - **Payload Content:** Workflow Name, Workflow ID, Specific Failed Node name, Error Message, Execution ID, and Direct URL to execution inspect panel.
    - **Live Railway Canvas:** [https://n8n-production-d5bb.up.railway.app/workflow/Qug3KsM2Rnq9RUel](https://n8n-production-d5bb.up.railway.app/workflow/Qug3KsM2Rnq9RUel) (ID: `Qug3KsM2Rnq9RUel`)
 
@@ -47,26 +47,27 @@ All 4 production workflows are live and connected to the Universal Error Notific
 4. **Lapsed Member Win-Back (7d/30d/60d):** [https://n8n-production-d5bb.up.railway.app/workflow/Ysn802Jb9S2YZiss](https://n8n-production-d5bb.up.railway.app/workflow/Ysn802Jb9S2YZiss) (Error Handler attached)
 5. **Universal Telegram Error Handler:** [https://n8n-production-d5bb.up.railway.app/workflow/Qug3KsM2Rnq9RUel](https://n8n-production-d5bb.up.railway.app/workflow/Qug3KsM2Rnq9RUel)
 
-
 ---
 
 ## 2. Prerequisites & Credentials
 
 ### A. Django Service Account Token
-Your static background automation token has already been generated via:
+Generate or retrieve your static background automation token via:
 ```bash
 python manage.py setup_automation_bot
 ```
+Or specify a custom token:
+```bash
+python manage.py setup_automation_bot --token <YOUR_TOKEN>
+```
 - **Service Account Username:** `automation_bot`
 - **Role Tier:** `OWNER` (full access to reporting and update endpoints)
-- **Token Key:** `6b0a703984803148e8c5ae42b621200ccfb44ea0`
+- **Token Key:** Securely stored in your environment or generated dynamically.
 
 ### B. Twilio WhatsApp Sandbox
 1. Log in to your [Twilio Console](https://console.twilio.com/).
-2. Under **Messaging** ➔ **Try it out** ➔ **Send a WhatsApp message**, locate your Twilio Sandbox phone number (`whatsapp:+17372212163`) and your join code (`join-twilio-trial`).
+2. Under **Messaging** ➔ **Try it out** ➔ **Send a WhatsApp message**, locate your Twilio Sandbox phone number and your join code.
 3. On your test phone (or gym owner's phone), send `join <your-code>` via WhatsApp to the Twilio number to activate the 24-hour sandbox testing window.
-
-
 
 ---
 
@@ -78,7 +79,7 @@ python manage.py setup_automation_bot
 3. Configure the credential:
    - **Credential Name:** `Gym API Token`
    - **Name:** `Authorization`
-   - **Value:** `Token 6b0a703984803148e8c5ae42b621200ccfb44ea0`
+   - **Value:** `Token <YOUR_AUTOMATION_BOT_TOKEN>`
 4. Click **Save**.
 
 ### Credential 2: Twilio Account

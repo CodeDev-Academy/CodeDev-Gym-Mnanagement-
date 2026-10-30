@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
-import { Navbar } from '../components/Navbar';
 import { PlanModal } from './PlanModal';
 import { getPlans, createPlan, updatePlan } from '../api/plans';
 
@@ -66,8 +65,6 @@ export const PlansPage = () => {
 
   return (
     <div className="dashboard-container">
-      <Navbar />
-
       <main className="dashboard-main">
         <div className="page-header">
           <div>

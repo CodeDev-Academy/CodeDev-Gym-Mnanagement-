@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.utils import timezone
 from .utils import normalize_phone_number, validate_e164_phone
@@ -12,7 +13,12 @@ class Member(models.Model):
         help_text='Stored in international format, e.g. +234...',
     )
     email = models.EmailField(max_length=150, blank=True, null=True)
-    photo = models.FileField(upload_to='members/photos/', blank=True, null=True)
+    photo = models.FileField(
+        upload_to='members/photos/',
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp', 'gif'])],
+    )
     date_joined = models.DateField(default=timezone.localdate)
     is_active = models.BooleanField(default=True)
     last_inactivity_reminder_at = models.DateTimeField(
@@ -38,4 +44,3 @@ class Member(models.Model):
 
     def __str__(self):
         return f"{self.full_name} ({self.phone_number})"
-

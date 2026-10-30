@@ -1,3 +1,5 @@
+from datetime import timedelta
+from django.utils import timezone
 from rest_framework import serializers
 from members.models import Member
 from .models import CheckIn
@@ -25,11 +27,21 @@ class CheckInSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'timestamp']
 
     def get_active_plan_name(self, obj):
-        active_sub = obj.member.subscriptions.filter(status='active').order_by('-end_date').first()
+        today = timezone.localdate()
+        active_sub = (
+            obj.member.subscriptions.filter(status='active', end_date__gte=today)
+            .order_by('-end_date')
+            .first()
+        )
         return active_sub.plan.name if active_sub else None
 
     def get_subscription_status(self, obj):
-        active_sub = obj.member.subscriptions.filter(status='active').order_by('-end_date').first()
+        today = timezone.localdate()
+        active_sub = (
+            obj.member.subscriptions.filter(status='active', end_date__gte=today)
+            .order_by('-end_date')
+            .first()
+        )
         if active_sub:
             return 'active'
         latest_sub = obj.member.subscriptions.order_by('-end_date').first()
@@ -41,6 +53,21 @@ class CreateCheckInSerializer(serializers.ModelSerializer):
         model = CheckIn
         fields = ['id', 'member', 'timestamp']
         read_only_fields = ['id', 'timestamp']
+
+    def validate(self, attrs):
+        member = attrs.get('member')
+        # Debounce: prevent duplicate check-in within 2 minutes
+        cooldown_threshold = timezone.now() - timedelta(minutes=2)
+        recent_checkin = CheckIn.objects.filter(
+            member=member,
+            timestamp__gte=cooldown_threshold,
+        ).first()
+        if recent_checkin:
+            local_time = timezone.localtime(recent_checkin.timestamp).strftime('%H:%M')
+            raise serializers.ValidationError(
+                f"{member.full_name} was already checked in just now ({local_time}). Duplicate check-in prevented."
+            )
+        return attrs
 
     def to_representation(self, instance):
         return CheckInSerializer(instance).data

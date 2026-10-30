@@ -21,7 +21,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     ordering = ['-payment_date']
 
     def get_permissions(self):
-        if self.action in ['destroy', 'summary']:
+        if self.action in ['destroy', 'summary', 'update', 'partial_update']:
             return [permissions.IsAuthenticated(), IsOwnerUser()]
         return [permissions.IsAuthenticated()]
 
@@ -30,18 +30,18 @@ class PaymentViewSet(viewsets.ModelViewSet):
             return RecordPaymentSerializer
         return PaymentSerializer
 
-
     def get_queryset(self):
         queryset = super().get_queryset()
-
-        # If logged in as Front-Desk Staff, restrict to today's shift payments
-        if getattr(self.request.user, 'is_front_desk', False):
-            today = timezone.localdate()
-            queryset = queryset.filter(payment_date__date=today)
 
         member_id = self.request.query_params.get('member')
         subscription_id = self.request.query_params.get('subscription')
         method_param = self.request.query_params.get('method')
+
+        # Front-Desk Staff sees today's shift receipts by default,
+        # but CAN inspect historical receipts when looking up a specific member/subscription.
+        if getattr(self.request.user, 'is_front_desk', False) and not (member_id or subscription_id):
+            today = timezone.localdate()
+            queryset = queryset.filter(payment_date__date=today)
 
         if member_id:
             queryset = queryset.filter(subscription__member_id=member_id)
@@ -49,7 +49,6 @@ class PaymentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(subscription_id=subscription_id)
         if method_param:
             queryset = queryset.filter(method=method_param)
-
 
         return queryset
 

@@ -12,12 +12,11 @@ from payments.models import Payment
 from accounts.permissions import IsOwnerUser
 
 
-
 class DashboardStatsView(APIView):
     """
     Returns aggregated business statistics for the gym dashboard:
     - Active members count
-    - Today's check-ins count
+    - Today's check-ins count & hourly rhythm (morning/afternoon/evening)
     - This month's revenue total
     - Today's revenue total
     - Subscriptions expiring within 7 days
@@ -39,14 +38,19 @@ class DashboardStatsView(APIView):
             .count()
         )
 
-        # 2. Check-in stats
-        today_checkins = CheckIn.objects.filter(timestamp__date=today).count()
+        # 2. Check-in stats & Floor Rhythm
+        today_checkins_qs = CheckIn.objects.filter(timestamp__date=today)
+        today_checkins = today_checkins_qs.count()
         today_unique_checkins = (
-            CheckIn.objects.filter(timestamp__date=today)
+            today_checkins_qs
             .values('member')
             .distinct()
             .count()
         )
+
+        morning_checkins = today_checkins_qs.filter(timestamp__hour__lt=12).count()
+        afternoon_checkins = today_checkins_qs.filter(timestamp__hour__gte=12, timestamp__hour__lt=17).count()
+        evening_checkins = today_checkins_qs.filter(timestamp__hour__gte=17).count()
 
         # 3. Revenue stats
         month_revenue_agg = Payment.objects.filter(
@@ -135,6 +139,11 @@ class DashboardStatsView(APIView):
                 'active_members': active_members_count,
                 'today_checkins': today_checkins,
                 'today_unique_checkins': today_unique_checkins,
+                'rhythm': {
+                    'morning': morning_checkins,
+                    'afternoon': afternoon_checkins,
+                    'evening': evening_checkins,
+                },
                 'month_revenue': month_revenue if is_owner else None,
                 'today_revenue': today_revenue if is_owner else None,
                 'expiring_this_week_count': expiring_count,
@@ -153,7 +162,6 @@ class DailySummaryView(APIView):
     Returns revenue today, check-ins today, new members registered today, and expiring members today.
     """
     permission_classes = [permissions.IsAuthenticated, IsOwnerUser]
-
 
     def get(self, request):
         date_param = request.query_params.get('date', 'today')
@@ -199,4 +207,3 @@ class DailySummaryView(APIView):
             'new_members_today': new_members,
             'expiring_today': expiring,
         }, status=status.HTTP_200_OK)
-

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
-import { Navbar } from '../components/Navbar';
 import {
   BellIcon,
   WhatsAppIcon,
@@ -225,8 +224,6 @@ export const RemindersDeskPage = () => {
 
   return (
     <div className="dashboard-container">
-      <Navbar />
-
       <main className="dashboard-main">
         {/* Header */}
         <div className="page-header">

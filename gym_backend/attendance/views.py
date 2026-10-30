@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from accounts.permissions import IsOwnerUser
 from .models import CheckIn
 from .serializers import CheckInSerializer, CreateCheckInSerializer
 
@@ -13,6 +14,11 @@ class CheckInViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['timestamp']
     ordering = ['-timestamp']
+
+    def get_permissions(self):
+        if self.action in ['destroy', 'update', 'partial_update']:
+            return [permissions.IsAuthenticated(), IsOwnerUser()]
+        return [permissions.IsAuthenticated()]
 
     def get_serializer_class(self):
         if self.action == 'create':

@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import FileExtensionValidator
 from django.db import models
 
 
@@ -24,6 +25,7 @@ class User(AbstractUser):
         upload_to='profiles/avatars/',
         blank=True,
         null=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp', 'gif'])],
         help_text='Profile photo.',
     )
     bio = models.CharField(
@@ -32,7 +34,6 @@ class User(AbstractUser):
         null=True,
         help_text='Short title or bio, e.g. Founder & Managing Director.',
     )
-
 
     @property
     def is_owner(self):

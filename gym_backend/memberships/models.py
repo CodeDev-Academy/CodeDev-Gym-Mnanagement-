@@ -27,7 +27,7 @@ class Subscription(models.Model):
 
     member = models.ForeignKey(
         Member,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='subscriptions',
     )
     plan = models.ForeignKey(

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
-import { Navbar } from '../components/Navbar';
 import { getPayments, getPaymentSummary } from '../api/payments';
 
 export const PaymentsPage = () => {
@@ -63,8 +62,6 @@ export const PaymentsPage = () => {
 
   return (
     <div className="dashboard-container">
-      <Navbar />
-
       <main className="dashboard-main">
         <div className="page-header">
           <div>

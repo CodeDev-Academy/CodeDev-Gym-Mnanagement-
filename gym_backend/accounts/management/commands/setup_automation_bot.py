@@ -1,3 +1,4 @@
+import os
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from rest_framework.authtoken.models import Token
@@ -53,7 +54,7 @@ class Command(BaseCommand):
         if updated_fields:
             user.save(update_fields=updated_fields)
 
-        custom_token = options.get('token')
+        custom_token = options.get('token') or os.getenv('AUTOMATION_BOT_TOKEN')
         regenerate = options.get('regenerate')
 
         if custom_token:
