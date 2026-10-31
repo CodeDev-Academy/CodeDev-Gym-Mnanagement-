@@ -30,7 +30,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Token {{ $vars.API_TOKEN || '6b0a703984803148e8c5ae42b621200ccfb44ea0' }}"
+              "value": "=Token {{ $vars.API_TOKEN || 'YOUR_AUTOMATION_BOT_TOKEN' }}"
             }
           ]
         },
@@ -135,7 +135,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Token {{ $vars.API_TOKEN || '6b0a703984803148e8c5ae42b621200ccfb44ea0' }}"
+              "value": "=Token {{ $vars.API_TOKEN || 'YOUR_AUTOMATION_BOT_TOKEN' }}"
             }
           ]
         },
