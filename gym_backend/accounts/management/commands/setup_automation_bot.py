@@ -1,4 +1,5 @@
 import os
+import hashlib
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from rest_framework.authtoken.models import Token
@@ -7,26 +8,24 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
-    help = (
-        "Idempotently creates or configures the dedicated 'automation_bot' service user "
-        "and permanent DRF API token for n8n and background automations."
-    )
+    help = "Sets up or resets the dedicated automation service account (Owner role) for external bots (e.g. n8n)."
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--token',
             type=str,
-            help='Specify an explicit static API token key to assign to the automation bot.',
+            help='Specify a fixed token key instead of auto-generating one.',
         )
         parser.add_argument(
             '--regenerate',
             action='store_true',
-            help='Force-regenerate a new API token if one already exists.',
+            help='Forces regeneration of the auth token even if one already exists.',
         )
 
     def handle(self, *args, **options):
         username = 'automation_bot'
-        user, created = User.objects.get_or_create(
+
+        user, user_created = User.objects.get_or_create(
             username=username,
             defaults={
                 'first_name': 'Automation',
@@ -58,9 +57,16 @@ class Command(BaseCommand):
         regenerate = options.get('regenerate')
 
         if custom_token:
-            Token.objects.filter(user=user).delete()
-            token = Token.objects.create(user=user, key=custom_token)
-            token_status = "Assigned custom token"
+            if len(custom_token) > 40:
+                custom_token = hashlib.sha1(custom_token.encode('utf-8')).hexdigest()[:40]
+            existing_token = Token.objects.filter(user=user).first()
+            if existing_token and existing_token.key == custom_token:
+                token = existing_token
+                token_status = "Retrieved existing token"
+            else:
+                Token.objects.filter(user=user).delete()
+                token = Token.objects.create(user=user, key=custom_token)
+                token_status = "Assigned custom token"
         elif regenerate:
             Token.objects.filter(user=user).delete()
             token = Token.objects.create(user=user)
