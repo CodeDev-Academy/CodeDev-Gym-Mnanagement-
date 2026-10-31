@@ -38,3 +38,9 @@ Thumbs.db
 .idea/
 *.swp
 *.log
+
+# Playwright & Test Artifacts
+test-results/
+gym_frontend/test-results/
+playwright-report/
+gym_frontend/playwright-report/
