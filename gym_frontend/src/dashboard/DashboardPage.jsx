@@ -275,8 +275,8 @@ export const DashboardPage = () => {
           {/* Card 1: Activity / Attendance (Dot Rhythm Grid) */}
           <div className="c-card c-card-activity" onClick={() => navigate('/checkin')}>
             <div className="c-card-header">
-              <div className="c-card-badge badge-orange">
-                <CheckInIcon size={18} color="#ff7849" />
+              <div className="c-card-badge">
+                <CheckInIcon size={18} />
               </div>
               <span className="c-card-title">Activity</span>
               <span className="c-card-timeframe">Today</span>
@@ -310,7 +310,7 @@ export const DashboardPage = () => {
                 <span className="c-number-unit">Check-ins</span>
               </div>
               <div className="c-card-sub-info">
-                <CheckInIcon size={12} color="#ff7849" />
+                <CheckInIcon size={12} />
                 <span>{metrics.today_unique_checkins} unique visitors</span>
               </div>
             </div>
@@ -319,43 +319,21 @@ export const DashboardPage = () => {
           {/* Card 2: Membership (Smooth Wave Sparkline) */}
           <div className="c-card c-card-membership" onClick={() => navigate('/members')}>
             <div className="c-card-header">
-              <div className="c-card-badge badge-emerald">
-                <UsersIcon size={18} color="#34d399" />
+              <div className="c-card-badge">
+                <UsersIcon size={18} />
               </div>
               <span className="c-card-title">Membership</span>
               <span className="c-card-timeframe">Active Base</span>
             </div>
 
-            {/* Smooth SVG Trend Sparkline */}
+            {/* Clean Single-Tone Trend Sparkline */}
             <div className="sparkline-wrapper">
               <svg viewBox="0 0 200 65" className="sparkline-svg" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="cyanGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0" />
-                  </linearGradient>
-                  <linearGradient id="amberGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M0,52 Q40,48 70,30 T140,24 T200,8 L200,65 L0,65 Z"
-                  fill="url(#cyanGrad)"
-                />
                 <path
                   d="M0,52 Q40,48 70,30 T140,24 T200,8"
                   fill="none"
-                  stroke="#06b6d4"
+                  stroke="var(--accent)"
                   strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M0,58 Q50,54 90,44 T150,38 T200,28"
-                  fill="none"
-                  stroke="#f59e0b"
-                  strokeWidth="2"
-                  strokeDasharray="4,4"
                   strokeLinecap="round"
                 />
               </svg>
@@ -367,7 +345,7 @@ export const DashboardPage = () => {
                 <span className="c-number-unit">Active</span>
               </div>
               <div className="c-card-sub-info">
-                <TrendingUpIcon size={12} color="#34d399" />
+                <TrendingUpIcon size={12} />
                 <span>of {metrics.total_members} total registered</span>
               </div>
             </div>
@@ -377,8 +355,8 @@ export const DashboardPage = () => {
           {user?.role === 'OWNER' ? (
             <div className="c-card c-card-revenue" onClick={() => navigate('/payments')}>
               <div className="c-card-header">
-                <div className="c-card-badge badge-purple">
-                  <CreditCardIcon size={18} color="#a78bfa" />
+                <div className="c-card-badge">
+                  <CreditCardIcon size={18} />
                 </div>
                 <span className="c-card-title">Revenue</span>
                 <span className="c-card-timeframe">This Month</span>
@@ -389,7 +367,7 @@ export const DashboardPage = () => {
                 <div className="eq-bar eq-h40" />
                 <div className="eq-bar eq-h65" />
                 <div className="eq-bar eq-h50" />
-                <div className="eq-bar eq-h85 eq-glow" />
+                <div className="eq-bar eq-h85" />
                 <div className="eq-bar eq-h70" />
                 <div className="eq-bar eq-h95 eq-highlight" />
                 <div className="eq-bar eq-h60" />
@@ -400,7 +378,7 @@ export const DashboardPage = () => {
                   {formatNaira(metrics.month_revenue)}
                 </div>
                 <div className="c-card-sub-info">
-                  <ClockIcon size={12} color="#a78bfa" />
+                  <ClockIcon size={12} />
                   <span>{formatNaira(metrics.today_revenue)} today</span>
                 </div>
               </div>
@@ -408,8 +386,8 @@ export const DashboardPage = () => {
           ) : (
             <div className="c-card c-card-revenue" onClick={() => navigate('/checkin')}>
               <div className="c-card-header">
-                <div className="c-card-badge badge-purple">
-                  <ShieldIcon size={18} color="#a78bfa" />
+                <div className="c-card-badge">
+                  <ShieldIcon size={18} />
                 </div>
                 <span className="c-card-title">Front Desk</span>
                 <span className="c-card-timeframe">Desk Shift</span>
@@ -503,18 +481,11 @@ export const DashboardPage = () => {
                 <path
                   d="M 25 105 A 75 75 0 0 1 175 105"
                   fill="none"
-                  stroke="url(#speedoGradient)"
+                  stroke="var(--accent)"
                   strokeWidth="14"
                   strokeDasharray={`${(gaugeData.pct / 100) * 235}, 250`}
                   strokeLinecap="round"
                 />
-                <defs>
-                  <linearGradient id="speedoGradient" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#06b6d4" />
-                    <stop offset="60%" stopColor="#34d399" />
-                    <stop offset="100%" stopColor="#f59e0b" />
-                  </linearGradient>
-                </defs>
               </svg>
 
               {/* Gauge Center Metric */}
@@ -522,26 +493,6 @@ export const DashboardPage = () => {
                 <span className="gauge-speed-label">{gaugeData.label}</span>
                 <span className="gauge-percent-text">{gaugeData.pct}%</span>
               </div>
-            </div>
-
-            {/* Glowing Sine Wave Beneath Dial */}
-            <div className="gauge-wave-footer">
-              <svg viewBox="0 0 240 32" className="wave-svg">
-                <path
-                  d="M 0 16 Q 30 2 60 16 T 120 16 T 180 16 T 240 16"
-                  fill="none"
-                  stroke="#f59e0b"
-                  strokeWidth="2"
-                  opacity="0.8"
-                />
-                <path
-                  d="M 0 16 Q 30 26 60 16 T 120 16 T 180 16 T 240 16"
-                  fill="none"
-                  stroke="#06b6d4"
-                  strokeWidth="1.8"
-                  opacity="0.6"
-                />
-              </svg>
             </div>
 
             <div className="gauge-status-desc">
