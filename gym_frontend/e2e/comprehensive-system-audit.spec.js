@@ -86,6 +86,49 @@ test.describe('Gym Management System - Comprehensive Feature Audit', () => {
     await expect(page.locator(`text=${TEST_MEMBER_NAME}`)).toBeVisible();
   });
 
+  test('Feature 3b: Member Lifecycle - Registration, Search, and Permanent Deletion', async ({ page }) => {
+    const TEMP_MEMBER_NAME = `Delete Audit ${Date.now().toString().slice(-4)}`;
+    const TEMP_MEMBER_PHONE = `+23481${Math.floor(10000000 + Math.random() * 90000000)}`;
+
+    // Login
+    await page.goto('/login');
+    await page.fill('#username', 'admin');
+    await page.fill('#password', '@Babson26');
+    await page.click('button[type="submit"]');
+    await page.waitForURL('http://localhost:5174/', { timeout: 15000 });
+
+    // Navigate to /members
+    await page.goto('/members');
+    await expect(page.locator('h1')).toContainText('Gym Members');
+
+    // 1. Add member
+    await page.click('button:has-text("+ Register Member")');
+    await expect(page.locator('.modal-card')).toBeVisible();
+    await page.fill('#member-fullname', TEMP_MEMBER_NAME);
+    await page.fill('#member-phone', TEMP_MEMBER_PHONE);
+    await page.fill('#member-email', `del_${Date.now()}@testgym.local`);
+    await page.click('.modal-card button[type="submit"]');
+    await expect(page.locator('.modal-card')).not.toBeVisible({ timeout: 10000 });
+
+    // 2. Search and verify member exists
+    const searchInput = page.locator('input[placeholder*="Search by name"]');
+    await searchInput.fill(TEMP_MEMBER_NAME);
+    await page.waitForTimeout(600);
+    const memberRow = page.locator(`tr:has-text("${TEMP_MEMBER_NAME}")`);
+    await expect(memberRow).toBeVisible({ timeout: 10000 });
+
+    // 3. Delete member with browser dialog confirmation
+    page.once('dialog', async dialog => {
+      expect(dialog.message()).toContain('permanently delete member');
+      await dialog.accept();
+    });
+    await memberRow.locator('button:has-text("Delete")').click();
+
+    // 4. Verify member is removed from table
+    await page.waitForTimeout(1000);
+    await expect(page.locator(`tr:has-text("${TEMP_MEMBER_NAME}")`)).not.toBeVisible({ timeout: 10000 });
+  });
+
   test('Feature 4: Membership Plans Directory', async ({ page }) => {
     // Login
     await page.goto('/login');
