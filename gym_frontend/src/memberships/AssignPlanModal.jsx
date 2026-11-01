@@ -11,6 +11,7 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [receiptData, setReceiptData] = useState(null);
+  const [editableMessage, setEditableMessage] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -75,6 +76,7 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
         start_date: startDate,
       });
       setReceiptData(res);
+      setEditableMessage(res.welcome_message || '');
       if (onSuccess) onSuccess();
     } catch (err) {
       if (err.response && err.response.data) {
@@ -130,12 +132,29 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
             </div>
 
             <div className="receipt-message-preview">
-              <label className="form-label" style={{ marginBottom: '0.4rem', color: '#94a3b8', fontSize: '0.82rem' }}>
-                Prepared WhatsApp Welcome & Receipt Message:
+              <label className="form-label" style={{ marginBottom: '0.4rem', color: '#94a3b8', fontSize: '0.82rem', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Prepared WhatsApp Welcome & Receipt Message:</span>
+                <span style={{ color: '#64748b', fontSize: '0.78rem' }}>✏️ Editable before sending</span>
               </label>
-              <div className="receipt-message-box">
-                {receiptData.welcome_message}
-              </div>
+              <textarea
+                className="receipt-message-textarea"
+                value={editableMessage}
+                onChange={(e) => setEditableMessage(e.target.value)}
+                rows={4}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '8px',
+                  background: 'var(--surface-raised, #161a24)',
+                  border: '1px solid var(--border, #222938)',
+                  color: 'var(--ink, #ffffff)',
+                  fontSize: '0.9rem',
+                  fontFamily: 'inherit',
+                  resize: 'vertical',
+                  lineHeight: '1.4',
+                  boxSizing: 'border-box'
+                }}
+              />
             </div>
 
             <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
@@ -143,7 +162,7 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
                 Done / Later
               </button>
               <a
-                href={receiptData.whatsapp_url}
+                href={`https://wa.me/${(member.phone_number || '').replace(/[^\d]/g, '')}?text=${encodeURIComponent(editableMessage)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-whatsapp btn-whatsapp-lg"

@@ -17,8 +17,14 @@ export const LoginPage = () => {
     setError('');
     setSubmitting(true);
 
+    const loginPayload = { username, password };
+
+    // Immediately clear fields in state and DOM so credentials never remain visible
+    setUsername('');
+    setPassword('');
+
     try {
-      const response = await api.post('auth/login/', { username, password });
+      const response = await api.post('auth/login/', loginPayload);
       const { token, user } = response.data;
       login(token, user);
       navigate('/');
@@ -44,7 +50,7 @@ export const LoginPage = () => {
 
         {error && <div className="error-alert">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="login-form">
+        <form onSubmit={handleSubmit} className="login-form" autoComplete="off">
           <div className="form-group">
             <label htmlFor="username">Username</label>
             <input
@@ -55,6 +61,7 @@ export const LoginPage = () => {
               placeholder="Enter your username"
               required
               autoFocus
+              autoComplete="off"
             />
           </div>
 
@@ -67,6 +74,7 @@ export const LoginPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               required
+              autoComplete="new-password"
             />
           </div>
 

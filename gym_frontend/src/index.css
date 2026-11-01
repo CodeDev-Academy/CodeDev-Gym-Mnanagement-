@@ -2121,7 +2121,7 @@ body {
 
 .brand-circle-coral:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 24px rgba(255, 87, 34, 0.6);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.12);
 }
 
 .brand-dot-online {
@@ -2272,9 +2272,9 @@ body {
 }
 
 .top-search-input:focus {
-  border-color: #ff5722;
+  border-color: var(--accent);
   background: rgba(22, 27, 38, 0.95);
-  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.15);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
 }
 
 .top-search-input::placeholder {
@@ -2326,7 +2326,7 @@ body {
 
 .top-btn-accent:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(255, 87, 34, 0.5);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
 }
 
 .top-btn-ghost {
@@ -2651,8 +2651,8 @@ body {
 }
 
 .badge-orange {
-  background: rgba(255, 87, 34, 0.15);
-  border: 1px solid rgba(255, 87, 34, 0.3);
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent);
 }
 
 .badge-emerald {
@@ -2711,13 +2711,13 @@ body {
 }
 
 .r-active {
-  background: #ff7849;
-  box-shadow: 0 0 8px rgba(255, 120, 73, 0.4);
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
 }
 
 .r-active-gold {
   background: #f59e0b;
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
 }
 
 .r-dim {
@@ -2958,12 +2958,12 @@ body {
 .btn-primary-accent {
   background: var(--accent); color: var(--accent-ink); font-weight: 700;
   color: white;
-  box-shadow: 0 4px 12px rgba(255, 87, 34, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .btn-primary-accent:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(255, 87, 34, 0.5);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
 }
 
 .btn-secondary-glass {
@@ -3414,7 +3414,7 @@ body {
   height: 104px;
   border-radius: 50%;
   background: #111827;
-  border: 3px solid #ff5722;
+  border: 3px solid var(--accent);
   outline: 2px solid rgba(255, 255, 255, 0.12);
   outline-offset: 2px;
   clip-path: circle(50% at 50% 50%);
@@ -3476,7 +3476,7 @@ body {
   letter-spacing: 0.5px;
   text-align: center;
   padding: 0.35rem 0.65rem;
-  background: rgba(255, 87, 34, 0.95);
+  background: var(--accent); color: var(--accent-ink);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
@@ -3674,8 +3674,8 @@ body {
 }
 
 .profile-input:focus {
-  border-color: #ff5722;
-  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.2);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
   background: rgba(15, 20, 32, 0.95);
 }
 
@@ -3699,12 +3699,12 @@ body {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(255, 87, 34, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
 }
 
 .profile-btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(255, 87, 34, 0.5);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
 }
 
 .profile-btn-primary:disabled {
@@ -3957,8 +3957,8 @@ body {
 }
 
 .summary-pill-btn.active {
-  background: rgba(255, 87, 34, 0.15);
-  border-color: rgba(255, 87, 34, 0.4);
+  background: var(--accent-subtle);
+  border-color: var(--accent);
   color: #ff7043;
 }
 
@@ -4112,7 +4112,7 @@ body {
 .checkbox-control input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: #ff5722;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
@@ -4169,7 +4169,7 @@ body {
 }
 
 .row-selected {
-  background: rgba(255, 87, 34, 0.06) !important;
+  background: var(--accent-subtle) !important;
 }
 
 .btn-icon-subtle {
