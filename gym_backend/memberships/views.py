@@ -108,6 +108,44 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+    @action(detail=False, methods=['post'], url_path='dispatch-receipt')
+    def dispatch_receipt(self, request):
+        import os, json, urllib.request
+        phone_number = request.data.get('phone_number')
+        message = request.data.get('message')
+        member_name = request.data.get('member_name', 'Member')
+
+        if not phone_number or not message:
+            return Response(
+                {'detail': 'Phone number and message are required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        n8n_url = os.getenv('N8N_RECEIPT_WEBHOOK_URL', 'http://localhost:5678/webhook/send-welcome-receipt')
+        try:
+            req = urllib.request.Request(
+                n8n_url,
+                data=json.dumps({
+                    'phone_number': phone_number,
+                    'message': message,
+                    'member_name': member_name,
+                    'dispatched_at': timezone.now().isoformat(),
+                }).encode('utf-8'),
+                headers={'Content-Type': 'application/json'},
+                method='POST'
+            )
+            with urllib.request.urlopen(req, timeout=3) as resp:
+                pass
+            return Response({
+                'detail': 'WhatsApp message sent directly via n8n automation!',
+                'status': 'sent'
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'detail': f'n8n Webhook notified ({type(e).__name__}). Click Open in WhatsApp as direct fallback.',
+                'status': 'queued_or_fallback'
+            }, status=status.HTTP_200_OK)
+
 
 class PendingRemindersView(APIView):
     permission_classes = [permissions.IsAuthenticated]

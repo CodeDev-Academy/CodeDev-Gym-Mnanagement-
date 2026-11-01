@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../api/client';
 import { getPlans } from '../api/plans';
 import { assignPlan } from '../api/subscriptions';
 import { WhatsAppIcon } from '../components/Icons';
@@ -7,8 +8,11 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
   const [plans, setPlans] = useState([]);
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [startDate, setStartDate] = useState('');
+  const [durationMultiplier, setDurationMultiplier] = useState(1);
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [dispatching, setDispatching] = useState(false);
+  const [dispatchMessage, setDispatchMessage] = useState('');
   const [error, setError] = useState('');
   const [receiptData, setReceiptData] = useState(null);
   const [editableMessage, setEditableMessage] = useState('');
@@ -18,6 +22,8 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
       setStartDate(new Date().toISOString().split('T')[0]);
       setError('');
       setReceiptData(null);
+      setDurationMultiplier(1);
+      setDispatchMessage('');
       loadActivePlans();
     }
   }, [isOpen]);
@@ -49,7 +55,9 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
     return d.toISOString().split('T')[0];
   };
 
-  const calculatedEndDate = selectedPlan ? calculateEndDate(startDate, selectedPlan.duration_days) : '';
+  const totalDays = selectedPlan ? selectedPlan.duration_days * durationMultiplier : 0;
+  const totalPrice = selectedPlan ? Number(selectedPlan.price) * durationMultiplier : 0;
+  const calculatedEndDate = selectedPlan ? calculateEndDate(startDate, totalDays) : '';
 
   const formatNaira = (amount) => {
     return '₦' + Number(amount || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -74,6 +82,7 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
         member: member.id,
         plan: parseInt(selectedPlanId, 10),
         start_date: startDate,
+        duration_multiplier: durationMultiplier,
       });
       setReceiptData(res);
       setEditableMessage(res.welcome_message || '');
@@ -92,18 +101,38 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
     }
   };
 
+  const handleAutoDispatch = async () => {
+    setDispatching(true);
+    setDispatchMessage('');
+    try {
+      const res = await api.post('subscriptions/dispatch-receipt/', {
+        phone_number: member.phone_number,
+        message: editableMessage,
+        member_name: member.full_name,
+      });
+      setDispatchMessage(res.data.detail || 'Dispatched via WhatsApp Bot!');
+    } catch (err) {
+      setDispatchMessage('Failed to reach automated WhatsApp bot. Please use manual WhatsApp Web below.');
+    } finally {
+      setDispatching(false);
+    }
+  };
+
   const handleDone = () => {
     if (onSuccess) onSuccess();
     onClose();
   };
 
   if (receiptData) {
+    const cleanPhone = (member.phone_number || '').replace(/[^\d]/g, '');
+    const dynamicUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(editableMessage)}`;
+
     return (
       <div className="modal-overlay" onClick={handleDone}>
         <div className="modal-card modal-lg" onClick={(e) => e.stopPropagation()}>
           <div className="modal-header">
             <div>
-              <h3 style={{ margin: 0, color: '#f8fafc' }}>Subscription Activated!</h3>
+              <h3 style={{ margin: 0, color: '#ffffff' }}>Subscription Activated!</h3>
               <p className="page-subtitle" style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem' }}>
                 Instant Member Welcome & Digital Receipt
               </p>
@@ -134,7 +163,7 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
             <div className="receipt-message-preview">
               <label className="form-label" style={{ marginBottom: '0.4rem', color: '#94a3b8', fontSize: '0.82rem', display: 'flex', justifyContent: 'space-between' }}>
                 <span>Prepared WhatsApp Welcome & Receipt Message:</span>
-                <span style={{ color: '#64748b', fontSize: '0.78rem' }}>✏️ Editable before sending</span>
+                <span style={{ color: '#10b981', fontSize: '0.78rem' }}>✏️ Editable before sending</span>
               </label>
               <textarea
                 className="receipt-message-textarea"
@@ -157,12 +186,35 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
               />
             </div>
 
-            <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            {dispatchMessage && (
+              <div style={{
+                marginTop: '0.75rem',
+                padding: '0.6rem 0.8rem',
+                borderRadius: '6px',
+                background: 'rgba(16, 185, 129, 0.12)',
+                border: '1px solid #10b981',
+                color: '#ffffff',
+                fontSize: '0.85rem'
+              }}>
+                {dispatchMessage}
+              </div>
+            )}
+
+            <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '0.75rem' }}>
               <button type="button" className="btn-secondary" onClick={handleDone}>
                 Done / Later
               </button>
+              <button
+                type="button"
+                className="btn-accent"
+                onClick={handleAutoDispatch}
+                disabled={dispatching}
+                title="Send directly in background via n8n WhatsApp bot"
+              >
+                {dispatching ? 'Sending via Bot...' : '🚀 Auto-Send via WhatsApp Bot'}
+              </button>
               <a
-                href={`https://wa.me/${(member.phone_number || '').replace(/[^\d]/g, '')}?text=${encodeURIComponent(editableMessage)}`}
+                href={dynamicUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-whatsapp btn-whatsapp-lg"
@@ -171,7 +223,7 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
                 }}
               >
                 <WhatsAppIcon size={18} />
-                Send WhatsApp Welcome Receipt
+                Open in WhatsApp Web
               </a>
             </div>
           </div>
@@ -223,6 +275,21 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
             )}
           </div>
 
+          <div className="form-group">
+            <label htmlFor="duration-multiplier">Duration Multiplier (Flexible Terms)</label>
+            <select
+              id="duration-multiplier"
+              value={durationMultiplier}
+              onChange={(e) => setDurationMultiplier(Number(e.target.value))}
+            >
+              <option value={1}>1 Cycle (Standard — {selectedPlan?.duration_days || 30} Days)</option>
+              <option value={2}>2 Cycles (2x — {(selectedPlan?.duration_days || 30) * 2} Days / e.g. 2 Months)</option>
+              <option value={3}>3 Cycles (3x — {(selectedPlan?.duration_days || 30) * 3} Days / e.g. 3 Months)</option>
+              <option value={6}>6 Cycles (6x — {(selectedPlan?.duration_days || 30) * 6} Days / Half-Year)</option>
+              <option value={12}>12 Cycles (12x — {(selectedPlan?.duration_days || 30) * 12} Days / Full-Year)</option>
+            </select>
+          </div>
+
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="sub-start-date">Subscription Start Date *</label>
@@ -249,16 +316,27 @@ export const AssignPlanModal = ({ isOpen, onClose, onSuccess, member }) => {
           {selectedPlan && (
             <div className="subscription-summary-box">
               <div className="summary-row">
-                <span>Plan Duration:</span>
-                <strong>{selectedPlan.duration_days} Days</strong>
+                <span>Plan Base:</span>
+                <strong>{selectedPlan.name} ({selectedPlan.duration_days} Days)</strong>
+              </div>
+              <div className="summary-row">
+                <span>Total Term:</span>
+                <strong style={{ color: '#10b981' }}>{totalDays} Days ({durationMultiplier} Cycle{durationMultiplier > 1 ? 's' : ''})</strong>
               </div>
               <div className="summary-row">
                 <span>Validity Period:</span>
                 <strong>{startDate} ➔ {calculatedEndDate}</strong>
               </div>
               <div className="summary-row summary-total">
-                <span>Plan Price:</span>
-                <strong className="price-highlight">{formatNaira(selectedPlan.price)}</strong>
+                <span>Total Amount Due:</span>
+                <strong className="price-highlight" style={{ color: '#10b981', fontSize: '1.25rem' }}>
+                  {formatNaira(totalPrice)}
+                  {durationMultiplier > 1 && (
+                    <span style={{ fontSize: '0.8rem', color: '#94a3b8', marginLeft: '0.5rem', fontWeight: 'normal' }}>
+                      ({formatNaira(selectedPlan.price)} × {durationMultiplier})
+                    </span>
+                  )}
+                </strong>
               </div>
             </div>
           )}

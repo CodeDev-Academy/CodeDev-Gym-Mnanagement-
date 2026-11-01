@@ -1,0 +1,1213 @@
+[
+  {
+    "name": "Abuja Gym \u2014 Direct WhatsApp Welcome & Digital Receipt",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "send-welcome-receipt",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "id": "webhook-trigger",
+        "name": "Incoming Welcome Receipt Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          220,
+          300
+        ],
+        "webhookId": "gym-welcome-receipt-webhook"
+      },
+      {
+        "parameters": {
+          "language": "javaScript",
+          "jsCode": "const item = $input.item.json.body || $input.item.json;\n\nfunction toE164(phone) {\n  if (!phone) return '';\n  let digits = String(phone).replace(/\\D/g, '');\n  if (digits.startsWith('0') && digits.length === 11) {\n    digits = '234' + digits.slice(1);\n  }\n  return digits;\n}\n\nconst rawPhone = item.phone_number || '';\nconst cleanPhone = toE164(rawPhone);\nconst message = item.message || '';\nconst memberName = item.member_name || 'Member';\n\nreturn {\n  json: {\n    member_name: memberName,\n    raw_phone: rawPhone,\n    clean_phone: cleanPhone,\n    whatsapp_to: 'whatsapp:+' + cleanPhone,\n    message: message,\n    dispatched_at: new Date().toISOString()\n  }\n};"
+        },
+        "id": "format-phone-payload",
+        "name": "Sanitize Phone & Format Payload",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          460,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.infobip.com/whatsapp/1/message/text",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=App {{ $vars.WHATSAPP_API_KEY || 'YOUR_INFOBIP_OR_META_API_KEY' }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "from",
+                "value": "={{ $vars.WHATSAPP_SENDER_NUMBER || '447860099299' }}"
+              },
+              {
+                "name": "to",
+                "value": "={{ $json.clean_phone }}"
+              },
+              {
+                "name": "content",
+                "value": "={{ { text: $json.message } }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "send-whatsapp-api",
+        "name": "Send WhatsApp via Cloud API",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          700,
+          300
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ JSON.stringify({ status: 'delivered', recipient: $json.clean_phone, time: $json.dispatched_at }) }}",
+          "options": {}
+        },
+        "id": "respond-webhook",
+        "name": "Respond to Caller",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          940,
+          300
+        ]
+      }
+    ],
+    "connections": {
+      "Incoming Welcome Receipt Webhook": {
+        "main": [
+          [
+            {
+              "node": "Sanitize Phone & Format Payload",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Sanitize Phone & Format Payload": {
+        "main": [
+          [
+            {
+              "node": "Send WhatsApp via Cloud API",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send WhatsApp via Cloud API": {
+        "main": [
+          [
+            {
+              "node": "Respond to Caller",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    }
+  },
+  {
+    "name": "Abuja Gym \u2014 Daily Owner Summary Report",
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "0 7 * * *"
+              }
+            ]
+          }
+        },
+        "id": "schedule-trigger-7am",
+        "name": "Schedule Daily 7AM WAT",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          220,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $vars.API_BASE_URL || 'https://gym-api.up.railway.app' }}/api/dashboard/daily-summary/?date=yesterday",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Token {{ $vars.API_TOKEN || 'YOUR_AUTOMATION_BOT_TOKEN' }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "json"
+              }
+            },
+            "retry": {
+              "retry": {
+                "maxTries": 3,
+                "waitBetweenTries": 5000
+              }
+            }
+          }
+        },
+        "id": "http-fetch-summary",
+        "name": "Fetch Yesterday Summary",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          460,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "language": "javaScript",
+          "jsCode": "const data = $input.item.json;\n\nfunction toE164(phone) {\n  if (!phone) return '';\n  let digits = String(phone).replace(/\\D/g, '');\n  if (digits.startsWith('0') && digits.length === 11) {\n    digits = '234' + digits.slice(1);\n  } else if (digits.startsWith('234') && digits.length === 13) {\n    // already 234\n  }\n  return 'whatsapp:+' + digits;\n}\n\nconst revenue = Number(data.revenue_today || 0);\nconst formattedRevenue = '\u20a6' + revenue.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\nconst dateStr = data.formatted_date || data.date || 'Yesterday';\nconst checkins = data.checkins_today || 0;\nconst uniqueCheckins = data.unique_checkins_today || 0;\nconst newMembers = data.new_members_today || 0;\nconst expiring = data.expiring_today || 0;\n\nconst rawOwnerPhone = $vars.OWNER_WHATSAPP_NUMBER || '+2349038446407';\nconst ownerPhone = toE164(rawOwnerPhone);\n\nlet activityNote = 'Great workout momentum across all shifts!';\nif (checkins === 0 && revenue === 0) {\n  activityNote = 'Rest day / Gym closed (0 check-ins recorded).';\n}\n\nconst messageBody = `\ud83d\udcca *ABUJA GYM \u2014 EXECUTIVE DAILY REPORT*\\n` +\n  `\ud83d\udcc5 *Date:* ${dateStr} (Full 24h Wrap-up)\\n` +\n  `\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\\n` +\n  `\ud83d\udcb0 *Revenue Collected:* ${formattedRevenue}\\n` +\n  `\ud83c\udfcb\ufe0f *Total Check-ins:* ${checkins} workouts (${uniqueCheckins} unique athletes)\\n` +\n  `\u2728 *New Members Enrolled:* ${newMembers}\\n` +\n  `\u26a0\ufe0f *Subscriptions Expired:* ${expiring}\\n` +\n  `\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\\n` +\n  `\ud83d\udca1 ${activityNote}\\n\\n` +\n  `Have a productive day ahead at the gym! \ud83d\udcaa`;\n\nreturn {\n  json: {\n    owner_phone: ownerPhone,\n    date: dateStr,\n    revenue: formattedRevenue,\n    checkins: checkins,\n    unique_checkins: uniqueCheckins,\n    new_members: newMembers,\n    expiring: expiring,\n    message_body: messageBody\n  }\n};"
+        },
+        "id": "code-format-card",
+        "name": "Format Executive Briefing Card",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          700,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "message",
+          "operation": "sendMessage",
+          "chatId": "5433612668",
+          "text": "={{ $json.message_body }}",
+          "additionalFields": {
+            "parse_mode": "Markdown",
+            "appendAttribution": false
+          }
+        },
+        "id": "telegram-send-owner",
+        "name": "Send Telegram Report to Owner",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [
+          940,
+          300
+        ],
+        "credentials": {
+          "telegramApi": {
+            "id": "A3rsRd8wXZFt93qG",
+            "name": "Dr ai_bot"
+          }
+        },
+        "onError": "continueRegularOutput"
+      }
+    ],
+    "connections": {
+      "Schedule Daily 7AM WAT": {
+        "main": [
+          [
+            {
+              "node": "Fetch Yesterday Summary",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Yesterday Summary": {
+        "main": [
+          [
+            {
+              "node": "Format Executive Briefing Card",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Executive Briefing Card": {
+        "main": [
+          [
+            {
+              "node": "Send Telegram Report to Owner",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "timezone": "Africa/Lagos",
+      "saveManualExecutions": true,
+      "saveExecutionProgress": true,
+      "errorWorkflow": "Qug3KsM2Rnq9RUel"
+    }
+  },
+  {
+    "name": "Abuja Gym \u2014 3-Day Expiry Reminders",
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "0 8 * * *"
+              }
+            ]
+          }
+        },
+        "id": "schedule-trigger-node",
+        "name": "Schedule Daily 8AM WAT",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          220,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "param-api-url",
+                "name": "api_base_url",
+                "value": "={{ $vars.API_BASE_URL || 'https://gym-api.up.railway.app' }}",
+                "type": "string"
+              },
+              {
+                "id": "param-days-ahead",
+                "name": "days_ahead",
+                "value": 3,
+                "type": "number"
+              },
+              {
+                "id": "param-twilio-sender",
+                "name": "twilio_whatsapp_sender",
+                "value": "={{ $vars.TWILIO_WHATSAPP_SENDER || 'whatsapp:+17372212163' }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "init-env-node",
+        "name": "Initialize Environment",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          460,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $('Initialize Environment').item.json.api_base_url }}/api/subscriptions/expiring-soon/?days=3",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "json"
+              }
+            },
+            "retry": {
+              "retry": {
+                "maxTries": 3,
+                "waitBetweenTries": 5000
+              }
+            }
+          }
+        },
+        "id": "http-fetch-expiring",
+        "name": "Fetch Expiring Subscriptions",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          700,
+          300
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "gym_api_token",
+            "name": "Gym API Token"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true
+            },
+            "conditions": [
+              {
+                "id": "has-items-condition",
+                "leftValue": "={{ $json.id || ($json[0] && $json[0].id) ? 1 : 0 }}",
+                "rightValue": 1,
+                "operator": {
+                  "type": "number",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "if-expiries-found",
+        "name": "Any Expiring Members?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          940,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "batchSize": 1,
+          "options": {}
+        },
+        "id": "split-batch-node",
+        "name": "Process One by One",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          1200,
+          220
+        ]
+      },
+      {
+        "parameters": {
+          "language": "javaScript",
+          "jsCode": "const item = $input.item.json;\n\n// Edge Case 2: Strict E.164 sanitizer\nfunction toE164(phone) {\n  if (!phone) return '';\n  let digits = String(phone).replace(/\\D/g, '');\n  if (digits.startsWith('0') && digits.length === 11) {\n    digits = '234' + digits.slice(1);\n  } else if (digits.startsWith('234') && digits.length === 13) {\n    // already Nigerian international without +\n  }\n  return 'whatsapp:+' + digits;\n}\n\nconst rawPhone = item.phone_number || '';\nconst formattedPhone = toE164(rawPhone);\nconst memberName = item.member_name || 'Valued Member';\nconst planName = item.plan_name || 'Gym Pass';\nconst daysLeft = item.days_left !== undefined ? item.days_left : 3;\nconst endDate = item.end_date || '';\n\n// Edge Case 1: Friendly personalized message copy\nconst messageBody = `Hi ${memberName}! \ud83c\udfcb\ufe0f\u200d\u2642\ufe0f\\n\\nYour ${planName} pass at Abuja Gym expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'} (${endDate}).\\n\\nRenew early so your training routine stays smooth and uninterrupted! We look forward to seeing you on the gym floor. \ud83d\udcaa`;\n\nreturn {\n  json: {\n    subscription_id: item.id || item.subscription_id,\n    member_id: item.member_id,\n    member_name: memberName,\n    raw_phone: rawPhone,\n    whatsapp_to: formattedPhone,\n    days_left: daysLeft,\n    end_date: endDate,\n    message_body: messageBody,\n    is_valid_phone: formattedPhone.length >= 13\n  }\n};"
+        },
+        "id": "sanitize-phone-node",
+        "name": "Sanitize Phone & Format Message",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1440,
+          220
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "message",
+          "operation": "sendMessage",
+          "chatId": "5433612668",
+          "text": "={{ $json.message_body }}",
+          "additionalFields": {
+            "parse_mode": "Markdown",
+            "appendAttribution": false
+          }
+        },
+        "id": "telegram-send-expiry",
+        "name": "Send Telegram Expiry Reminder",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [
+          1680,
+          220
+        ],
+        "credentials": {
+          "telegramApi": {
+            "id": "A3rsRd8wXZFt93qG",
+            "name": "Dr ai_bot"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false
+            },
+            "conditions": [
+              {
+                "id": "delivery-check-condition",
+                "leftValue": "={{ $json.status || ($json.error ? 'failed' : 'sent') }}",
+                "rightValue": "failed",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "if-sent-successfully",
+        "name": "Dispatched Successfully?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          1920,
+          220
+        ]
+      },
+      {
+        "parameters": {
+          "method": "PATCH",
+          "url": "={{ $('Initialize Environment').item.json.api_base_url }}/api/subscriptions/{{ $('Sanitize Phone & Format Message').item.json.subscription_id }}/mark-reminded/",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "retry": {
+              "retry": {
+                "maxTries": 3,
+                "waitBetweenTries": 3000
+              }
+            }
+          }
+        },
+        "id": "http-mark-reminded",
+        "name": "Mark Subscription Reminded",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          2160,
+          180
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "gym_api_token",
+            "name": "Gym API Token"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "amount": 1.5,
+          "unit": "seconds"
+        },
+        "id": "rate-limit-wait-node",
+        "name": "1.5s Rate Limit Pacer",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          2400,
+          220
+        ]
+      },
+      {
+        "parameters": {},
+        "id": "noop-no-expiries",
+        "name": "No Pending Expiries",
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          1200,
+          420
+        ]
+      }
+    ],
+    "connections": {
+      "Schedule Daily 8AM WAT": {
+        "main": [
+          [
+            {
+              "node": "Initialize Environment",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Initialize Environment": {
+        "main": [
+          [
+            {
+              "node": "Fetch Expiring Subscriptions",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Expiring Subscriptions": {
+        "main": [
+          [
+            {
+              "node": "Any Expiring Members?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Expiring Members?": {
+        "main": [
+          [
+            {
+              "node": "Process One by One",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "No Pending Expiries",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Process One by One": {
+        "main": [
+          [
+            {
+              "node": "Sanitize Phone & Format Message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Sanitize Phone & Format Message": {
+        "main": [
+          [
+            {
+              "node": "Send Telegram Expiry Reminder",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Telegram Expiry Reminder": {
+        "main": [
+          [
+            {
+              "node": "Dispatched Successfully?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Dispatched Successfully?": {
+        "main": [
+          [
+            {
+              "node": "Mark Subscription Reminded",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "1.5s Rate Limit Pacer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mark Subscription Reminded": {
+        "main": [
+          [
+            {
+              "node": "1.5s Rate Limit Pacer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "1.5s Rate Limit Pacer": {
+        "main": [
+          [
+            {
+              "node": "Process One by One",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "timezone": "Africa/Lagos",
+      "saveManualExecutions": true,
+      "saveExecutionProgress": true,
+      "errorWorkflow": "Qug3KsM2Rnq9RUel"
+    }
+  },
+  {
+    "name": "Abuja Gym \u2014 Inactive Member Rescue (14-Day Absence)",
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "0 10 * * 1"
+              }
+            ]
+          }
+        },
+        "id": "schedule-trigger-inactive",
+        "name": "Schedule Mondays 10AM WAT",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          220,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $vars.API_BASE_URL || 'https://gym-api.up.railway.app' }}/api/reminders/pending/",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Token {{ $vars.API_TOKEN || 'YOUR_AUTOMATION_BOT_TOKEN' }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "json"
+              }
+            },
+            "retry": {
+              "retry": {
+                "maxTries": 3,
+                "waitBetweenTries": 5000
+              }
+            }
+          }
+        },
+        "id": "http-fetch-pending",
+        "name": "Fetch Pending Reminders",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          460,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "language": "javaScript",
+          "jsCode": "const data = $input.item.json;\nconst list = (data.categories && data.categories.inactive_14d) || [];\nreturn list.map(item => ({ json: item }));"
+        },
+        "id": "code-extract-inactive",
+        "name": "Extract Inactive Members",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          680,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "batchSize": 1,
+          "options": {}
+        },
+        "id": "split-batch-inactive",
+        "name": "Process One by One",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          900,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "language": "javaScript",
+          "jsCode": "const item = $input.item.json;\n\nfunction toE164(phone) {\n  if (!phone) return '';\n  let digits = String(phone).replace(/\\D/g, '');\n  if (digits.startsWith('0') && digits.length === 11) {\n    digits = '234' + digits.slice(1);\n  }\n  return 'whatsapp:+' + digits;\n}\n\nconst rawPhone = item.phone_number || '';\nconst formattedPhone = toE164(rawPhone);\nconst memberName = item.member_name || 'Valued Member';\nconst planName = item.plan_name || 'Gym Pass';\nconst daysCount = item.days_count || 14;\n\nconst fallbackMsg = `Hi ${memberName}! \ud83c\udfcb\ufe0f We noticed you have not been on the gym floor in ${daysCount} days. Your ${planName} pass is active\u2014do not let your fitness investment go to waste! Even a quick 30-minute workout today gets your momentum back. See you soon! \ud83d\udcaa`;\nconst messageBody = item.prepared_message || fallbackMsg;\n\nreturn {\n  json: {\n    member_id: item.member_id || item.id,\n    member_name: memberName,\n    raw_phone: rawPhone,\n    whatsapp_to: formattedPhone,\n    days_count: daysCount,\n    message_body: messageBody\n  }\n};"
+        },
+        "id": "code-sanitize-inactive",
+        "name": "Sanitize Phone & Message",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1120,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "message",
+          "operation": "sendMessage",
+          "chatId": "5433612668",
+          "text": "={{ $json.message_body }}",
+          "additionalFields": {
+            "parse_mode": "Markdown",
+            "appendAttribution": false
+          }
+        },
+        "id": "telegram-send-inactive",
+        "name": "Send Telegram Inactive Rescue",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [
+          1340,
+          300
+        ],
+        "credentials": {
+          "telegramApi": {
+            "id": "A3rsRd8wXZFt93qG",
+            "name": "Dr ai_bot"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $vars.API_BASE_URL || 'https://gym-api.up.railway.app' }}/api/reminders/mark-sent/",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Token {{ $vars.API_TOKEN || 'YOUR_AUTOMATION_BOT_TOKEN' }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ category: 'inactive_14d', member_ids: [$('Sanitize Phone & Message').item.json.member_id] }) }}"
+        },
+        "id": "http-mark-sent-inactive",
+        "name": "Mark Inactive Reminder Sent",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1560,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "amount": 1.5,
+          "unit": "seconds"
+        },
+        "id": "wait-inactive-pacer",
+        "name": "1.5s Rate Limit Pacer",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          1780,
+          300
+        ]
+      }
+    ],
+    "connections": {
+      "Schedule Mondays 10AM WAT": {
+        "main": [
+          [
+            {
+              "node": "Fetch Pending Reminders",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Pending Reminders": {
+        "main": [
+          [
+            {
+              "node": "Extract Inactive Members",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract Inactive Members": {
+        "main": [
+          [
+            {
+              "node": "Process One by One",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Process One by One": {
+        "main": [
+          [
+            {
+              "node": "Sanitize Phone & Message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Sanitize Phone & Message": {
+        "main": [
+          [
+            {
+              "node": "Send Telegram Inactive Rescue",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Telegram Inactive Rescue": {
+        "main": [
+          [
+            {
+              "node": "Mark Inactive Reminder Sent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mark Inactive Reminder Sent": {
+        "main": [
+          [
+            {
+              "node": "1.5s Rate Limit Pacer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "1.5s Rate Limit Pacer": {
+        "main": [
+          [
+            {
+              "node": "Process One by One",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "timezone": "Africa/Lagos",
+      "saveManualExecutions": true,
+      "saveExecutionProgress": true,
+      "errorWorkflow": "Qug3KsM2Rnq9RUel"
+    }
+  },
+  {
+    "name": "Abuja Gym \u2014 Lapsed Member Win-Back Pipeline",
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "0 11 * * 4"
+              }
+            ]
+          }
+        },
+        "id": "schedule-trigger-lapsed",
+        "name": "Schedule Thursdays 11AM WAT",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          220,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $vars.API_BASE_URL || 'https://gym-api.up.railway.app' }}/api/reminders/pending/",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Token {{ $vars.API_TOKEN || 'YOUR_AUTOMATION_BOT_TOKEN' }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "json"
+              }
+            },
+            "retry": {
+              "retry": {
+                "maxTries": 3,
+                "waitBetweenTries": 5000
+              }
+            }
+          }
+        },
+        "id": "http-fetch-pending-lapsed",
+        "name": "Fetch Pending Reminders",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          460,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "language": "javaScript",
+          "jsCode": "const data = $input.item.json;\nconst cats = data.categories || {};\nconst q7 = (cats.lapsed_7d || []).map(i => ({ ...i, category: 'lapsed_7d' }));\nconst q30 = (cats.lapsed_30d || []).map(i => ({ ...i, category: 'lapsed_30d' }));\nconst q60 = (cats.lapsed_60d || []).map(i => ({ ...i, category: 'lapsed_60d' }));\nconst all = [...q7, ...q30, ...q60];\nreturn all.map(item => ({ json: item }));"
+        },
+        "id": "code-extract-lapsed",
+        "name": "Extract Lapsed Queues",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          680,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "batchSize": 1,
+          "options": {}
+        },
+        "id": "split-batch-lapsed",
+        "name": "Process One by One",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          900,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "language": "javaScript",
+          "jsCode": "const item = $input.item.json;\n\nfunction toE164(phone) {\n  if (!phone) return '';\n  let digits = String(phone).replace(/\\D/g, '');\n  if (digits.startsWith('0') && digits.length === 11) {\n    digits = '234' + digits.slice(1);\n  }\n  return 'whatsapp:+' + digits;\n}\n\nconst rawPhone = item.phone_number || '';\nconst formattedPhone = toE164(rawPhone);\nconst memberName = item.member_name || 'Valued Athlete';\nconst planName = item.plan_name || 'Gym Membership';\nconst daysCount = item.days_count || 7;\nconst endDate = item.end_date || '';\n\nconst fallbackMsg = `Hi ${memberName}! We missed your energy at Abuja Gym. Your ${planName} ended on ${endDate}. Stop by the front desk anytime to renew and get right back into your training rhythm! \ud83d\udcaa`;\nconst messageBody = item.prepared_message || fallbackMsg;\n\nreturn {\n  json: {\n    id: item.id,\n    subscription_id: item.id,\n    member_id: item.member_id,\n    category: item.category || 'lapsed_7d',\n    member_name: memberName,\n    raw_phone: rawPhone,\n    whatsapp_to: formattedPhone,\n    days_count: daysCount,\n    message_body: messageBody\n  }\n};"
+        },
+        "id": "code-sanitize-lapsed",
+        "name": "Sanitize Phone & Message",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1120,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "message",
+          "operation": "sendMessage",
+          "chatId": "5433612668",
+          "text": "={{ $json.message_body }}",
+          "additionalFields": {
+            "parse_mode": "Markdown",
+            "appendAttribution": false
+          }
+        },
+        "id": "telegram-send-lapsed",
+        "name": "Send Telegram Lapsed Win-Back",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [
+          1340,
+          300
+        ],
+        "credentials": {
+          "telegramApi": {
+            "id": "A3rsRd8wXZFt93qG",
+            "name": "Dr ai_bot"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $vars.API_BASE_URL || 'https://gym-api.up.railway.app' }}/api/reminders/mark-sent/",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Token {{ $vars.API_TOKEN || 'YOUR_AUTOMATION_BOT_TOKEN' }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ category: $('Sanitize Phone & Message').item.json.category, subscription_ids: [$('Sanitize Phone & Message').item.json.id] }) }}"
+        },
+        "id": "http-advance-lapsed-stage",
+        "name": "Advance Lapsed Stage in DB",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1560,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "amount": 1.5,
+          "unit": "seconds"
+        },
+        "id": "wait-lapsed-pacer",
+        "name": "1.5s Rate Limit Pacer",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          1780,
+          300
+        ]
+      }
+    ],
+    "connections": {
+      "Schedule Thursdays 11AM WAT": {
+        "main": [
+          [
+            {
+              "node": "Fetch Pending Reminders",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Pending Reminders": {
+        "main": [
+          [
+            {
+              "node": "Extract Lapsed Queues",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract Lapsed Queues": {
+        "main": [
+          [
+            {
+              "node": "Process One by One",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Process One by One": {
+        "main": [
+          [
+            {
+              "node": "Sanitize Phone & Message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Sanitize Phone & Message": {
+        "main": [
+          [
+            {
+              "node": "Send Telegram Lapsed Win-Back",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Telegram Lapsed Win-Back": {
+        "main": [
+          [
+            {
+              "node": "Advance Lapsed Stage in DB",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Advance Lapsed Stage in DB": {
+        "main": [
+          [
+            {
+              "node": "1.5s Rate Limit Pacer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "1.5s Rate Limit Pacer": {
+        "main": [
+          [
+            {
+              "node": "Process One by One",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "timezone": "Africa/Lagos",
+      "saveManualExecutions": true,
+      "saveExecutionProgress": true,
+      "errorWorkflow": "Qug3KsM2Rnq9RUel"
+    }
+  }
+]

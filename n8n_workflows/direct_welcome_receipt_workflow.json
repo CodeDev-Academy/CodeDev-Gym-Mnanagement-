@@ -1,0 +1,124 @@
+{
+  "name": "Abuja Gym — Direct WhatsApp Welcome & Digital Receipt",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "send-welcome-receipt",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Incoming Welcome Receipt Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "webhookId": "gym-welcome-receipt-webhook"
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const item = $input.item.json.body || $input.item.json;\n\nfunction toE164(phone) {\n  if (!phone) return '';\n  let digits = String(phone).replace(/\\D/g, '');\n  if (digits.startsWith('0') && digits.length === 11) {\n    digits = '234' + digits.slice(1);\n  }\n  return digits;\n}\n\nconst rawPhone = item.phone_number || '';\nconst cleanPhone = toE164(rawPhone);\nconst message = item.message || '';\nconst memberName = item.member_name || 'Member';\n\nreturn {\n  json: {\n    member_name: memberName,\n    raw_phone: rawPhone,\n    clean_phone: cleanPhone,\n    whatsapp_to: 'whatsapp:+' + cleanPhone,\n    message: message,\n    dispatched_at: new Date().toISOString()\n  }\n};"
+      },
+      "id": "format-phone-payload",
+      "name": "Sanitize Phone & Format Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.infobip.com/whatsapp/1/message/text",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=App {{ $vars.WHATSAPP_API_KEY || 'YOUR_INFOBIP_OR_META_API_KEY' }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "from",
+              "value": "={{ $vars.WHATSAPP_SENDER_NUMBER || '447860099299' }}"
+            },
+            {
+              "name": "to",
+              "value": "={{ $json.clean_phone }}"
+            },
+            {
+              "name": "content",
+              "value": "={{ { text: $json.message } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-whatsapp-api",
+      "name": "Send WhatsApp via Cloud API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 300],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'delivered', recipient: $json.clean_phone, time: $json.dispatched_at }) }}",
+        "options": {}
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Caller",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [940, 300]
+    }
+  ],
+  "connections": {
+    "Incoming Welcome Receipt Webhook": {
+      "main": [
+        [
+          {
+            "node": "Sanitize Phone & Format Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitize Phone & Format Payload": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp via Cloud API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp via Cloud API": {
+      "main": [
+        [
+          {
+            "node": "Respond to Caller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
+
