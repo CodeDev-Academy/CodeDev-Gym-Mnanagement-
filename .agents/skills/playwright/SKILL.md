@@ -18,3 +18,4 @@ Comprehensive browser automation and end-to-end (E2E) testing skill powered by M
 2. **Deterministic Selectors**: Rely on accessible role and text selectors (`getByRole`, `getByLabel`, `getByText`) to reflect realistic user interaction.
 3. **Trace & Screenshot on Failure**: Retain test failure traces, console errors, and screenshots for rapid diagnosis.
 4. **Non-destructive Data Cleanup**: Ensure test data handles teardown or uses unique identifiers to avoid polluting live database states.
+
