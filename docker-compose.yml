@@ -1,0 +1,78 @@
+services:
+  # =========================================================================
+  # 1. PostgreSQL Database Service
+  # =========================================================================
+  db:
+    image: postgres:16-alpine
+    container_name: gym_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-gym_db}
+      POSTGRES_USER: ${POSTGRES_USER:-gym_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gym_secure_pass_2026}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gym_user} -d ${POSTGRES_DB:-gym_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gym_network
+
+  # =========================================================================
+  # 2. Django REST Framework Backend
+  # =========================================================================
+  backend:
+    build:
+      context: ./gym_backend
+      dockerfile: Dockerfile
+    container_name: gym_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-django-insecure-production-key-change-me-gym-2026}
+      DEBUG: ${DEBUG:-False}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-*}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5174,http://127.0.0.1:5174}
+      DATABASE_URL: postgres://${POSTGRES_USER:-gym_user}:${POSTGRES_PASSWORD:-gym_secure_pass_2026}@db:5432/${POSTGRES_DB:-gym_db}
+      PORT: 8000
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-120}
+      N8N_WEBHOOK_URL: ${N8N_WEBHOOK_URL:-}
+    ports:
+      - "${BACKEND_PORT:-8001}:8000"
+    volumes:
+      - gym_media:/app/media
+      - gym_static:/app/staticfiles
+    networks:
+      - gym_network
+
+  # =========================================================================
+  # 3. React Frontend (Nginx Alpine)
+  # =========================================================================
+  frontend:
+    build:
+      context: ./gym_frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8001/api/}
+    container_name: gym_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-5174}:80"
+    networks:
+      - gym_network
+
+volumes:
+  postgres_data:
+  gym_media:
+  gym_static:
+
+networks:
+  gym_network:
+    driver: bridge
