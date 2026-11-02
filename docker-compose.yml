@@ -76,3 +76,4 @@ volumes:
 networks:
   gym_network:
     driver: bridge
+
